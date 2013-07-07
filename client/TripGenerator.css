@@ -1,0 +1,28 @@
+/* CSS declarations go here */
+table#projectsList tr td:hover {
+	cursor: pointer;
+}
+
+.input-km {
+	width: 60px;
+}
+
+#simulationOutputBox {
+	border: 1px solid darkgrey;
+	border-radius: 5px;
+	padding: 5px;
+	height: 200px;
+	overflow: auto;
+}
+
+#simulationOutputBox p {
+	margin: 0;
+	padding: 0;
+	font-size: 12px;
+	width: 100%;
+}
+
+#simulationOutputBox p:before {
+	content: "# ";
+	color: darkgrey;
+}

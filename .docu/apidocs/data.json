@@ -1,0 +1,662 @@
+{
+    "project": {
+        "name": "TripGenerator",
+        "description": "Ein kleines Tool zur Generierung von Fahrtenbücher. Genutzt wird meteor.",
+        "version": "0.3"
+    },
+    "files": {
+        "../client/TripGenerator.js": {
+            "name": "../client/TripGenerator.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../client/loader.js": {
+            "name": "../client/loader.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../public/simulation.js": {
+            "name": "../public/simulation.js",
+            "modules": {
+                "Simulation": 1
+            },
+            "classes": {
+                "Place": 1,
+                "Car": 1,
+                "Direction": 1,
+                "Trip": 1,
+                "Simulation": 1
+            },
+            "fors": {},
+            "namespaces": {}
+        }
+    },
+    "modules": {
+        "Simulation": {
+            "name": "Simulation",
+            "submodules": {},
+            "classes": {
+                "Place": 1,
+                "Car": 1,
+                "Direction": 1,
+                "Trip": 1,
+                "Simulation": 1
+            },
+            "fors": {},
+            "namespaces": {},
+            "tag": "module",
+            "file": "../public/simulation.js",
+            "line": 209,
+            "description": "Simulation in WebWorker"
+        }
+    },
+    "classes": {
+        "Place": {
+            "name": "Place",
+            "shortname": "Place",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "module": "Simulation",
+            "namespace": "",
+            "file": "../public/simulation.js",
+            "line": 8,
+            "description": "Standort-Objekt.",
+            "is_constructor": 1,
+            "params": [
+                {
+                    "name": "id",
+                    "description": "Identifier",
+                    "type": "Number"
+                },
+                {
+                    "name": "name",
+                    "description": "Name des Standorts",
+                    "type": "String"
+                },
+                {
+                    "name": "GMDName",
+                    "description": "Name in googlemaps Directions",
+                    "type": "String"
+                },
+                {
+                    "name": "kmAVG",
+                    "description": "Durschnittliche Kilometer die Autos dieses Standorts zur Verfügung haben.",
+                    "type": "Number"
+                }
+            ]
+        },
+        "Car": {
+            "name": "Car",
+            "shortname": "Car",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "module": "Simulation",
+            "namespace": "",
+            "file": "../public/simulation.js",
+            "line": 39,
+            "description": "Auto-Objekt. Gehört zu einem Standort, besitzt durchschnt. kilometer und wieviel tatsächlich gefahren wurde",
+            "is_constructor": 1,
+            "params": [
+                {
+                    "name": "name",
+                    "description": "Identifier",
+                    "type": "String"
+                },
+                {
+                    "name": "home",
+                    "description": "Heimatstandort",
+                    "type": "String"
+                },
+                {
+                    "name": "currentLoc",
+                    "description": "derzeitiger Standort des Autos (Achtung GMDirections Bezeichnung, nicht this.home!)",
+                    "type": "String"
+                },
+                {
+                    "name": "kmAVG",
+                    "description": "Kilometer die dem Auto zur Verfügung stehen",
+                    "type": "Number"
+                }
+            ]
+        },
+        "Direction": {
+            "name": "Direction",
+            "shortname": "Direction",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "module": "Simulation",
+            "namespace": "",
+            "file": "../public/simulation.js",
+            "line": 106,
+            "description": "Objekt für Routen",
+            "is_constructor": 1,
+            "params": [
+                {
+                    "name": "origin",
+                    "description": "Start",
+                    "type": "String"
+                },
+                {
+                    "name": "destination",
+                    "description": "Ziel",
+                    "type": "String"
+                },
+                {
+                    "name": "distance",
+                    "description": "Entfernung von Start zu Ziel",
+                    "type": "Object",
+                    "props": [
+                        {
+                            "name": "text",
+                            "description": "Textuelle beschreibung der Entfernung \"20 Kilometer\"",
+                            "type": "String"
+                        },
+                        {
+                            "name": "value",
+                            "description": "Zahlenwert in Metern",
+                            "type": "Number"
+                        }
+                    ]
+                },
+                {
+                    "name": "duration",
+                    "description": "Dauer von Start zu Ziel",
+                    "type": "Object",
+                    "props": [
+                        {
+                            "name": "text",
+                            "description": "Textuelle beschreibung der Zeit \"20 Stunden 18 Minuten\"",
+                            "type": "String"
+                        },
+                        {
+                            "name": "value",
+                            "description": "Zahlenwert in Minuten",
+                            "type": "Number"
+                        }
+                    ]
+                }
+            ]
+        },
+        "Trip": {
+            "name": "Trip",
+            "shortname": "Trip",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "module": "Simulation",
+            "namespace": "",
+            "file": "../public/simulation.js",
+            "line": 152,
+            "description": "Speichert einen Trip ab. Also eine Fahrt die ein Auto gefahren ist.",
+            "is_constructor": 1,
+            "params": [
+                {
+                    "name": "car",
+                    "description": "Auto des Trips",
+                    "type": "Car"
+                },
+                {
+                    "name": "d",
+                    "description": "Strecke des Trips",
+                    "type": "Direction"
+                },
+                {
+                    "name": "startTime",
+                    "description": "Zeitpunkt der Abfahrt",
+                    "type": "Date"
+                }
+            ]
+        },
+        "Simulation": {
+            "name": "Simulation",
+            "shortname": "Simulation",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "module": "Simulation",
+            "namespace": "",
+            "file": "../public/simulation.js",
+            "line": 209,
+            "description": "Simulationsklasse. Handelt die Simulation ab.",
+            "is_constructor": 1,
+            "params": [
+                {
+                    "name": "parameters",
+                    "description": "Enthält die Informationen für die Simulation",
+                    "type": "Object"
+                }
+            ]
+        }
+    },
+    "classitems": [
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 137,
+            "description": "Nachricht vom Worker",
+            "class": "Place"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 154,
+            "description": "Error vom Worker",
+            "class": "Place"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 161,
+            "description": "Verknüpft jeden Standort miteinander und erzeugt ein googleMapsLatLng-Objekt",
+            "class": "Place"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 177,
+            "description": "Sendet die Orte and den google-Directions Service und schickt die Antwort an ein Callback",
+            "class": "Place"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 194,
+            "description": "Callback für die google-Directions anfrage.",
+            "class": "Place"
+        },
+        {
+            "file": "../client/loader.js",
+            "line": 2,
+            "description": "almond 0.1.4 Copyright (c) 2011, The Dojo Foundation All Rights Reserved.\nAvailable via the MIT or new BSD license.\nsee: http://github.com/jrburke/almond for details",
+            "class": "Place"
+        },
+        {
+            "file": "../client/loader.js",
+            "line": 21,
+            "description": "Given a relative module name, like ./something, normalize it to\na real name that can be mapped to a path.",
+            "params": [
+                {
+                    "name": "name",
+                    "description": "the relative name",
+                    "type": "String"
+                },
+                {
+                    "name": "baseName",
+                    "description": "a real name that the name arg is relative\nto.",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "normalized name",
+                "type": "String"
+            },
+            "class": "Place"
+        },
+        {
+            "file": "../client/loader.js",
+            "line": 167,
+            "description": "Makes a name map, normalizing the name, and using a plugin\nfor normalization if necessary. Grabs a ref to plugin\ntoo, as an optimization.",
+            "class": "Place"
+        },
+        {
+            "file": "../client/loader.js",
+            "line": 313,
+            "description": "Just drops the config on the floor, but returns req in case\nthe config return value is used.",
+            "class": "Place"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 28,
+            "description": "Gibt alle Werte des Objekts in einem Satz zurück",
+            "itemtype": "method",
+            "name": "toString",
+            "return": {
+                "description": "\"Auto Id von Standort Heimatstandort. Aktueller Standort: aktStandort. Verfügbare Kilometer: 2030km. Gefahrene Kilometer: 1980km (übrig: 50km)\"",
+                "type": "String"
+            },
+            "class": "Place",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 57,
+            "description": "Car Prototype Functions",
+            "class": "Car",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 63,
+            "description": "Gibt dir noch verfügbaren Kilometer zurück. Zieht kmTraveled von kmAVG ab.",
+            "itemtype": "method",
+            "name": "availableKM",
+            "return": {
+                "description": "km",
+                "type": "Number"
+            },
+            "class": "Car",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 73,
+            "description": "Lässt das Auto die übergebene Strecke fahren.",
+            "itemtype": "method",
+            "name": "driveDirection",
+            "params": [
+                {
+                    "name": "d",
+                    "description": "Die zu fahrende Direction (Strecke)",
+                    "type": "Direction"
+                }
+            ],
+            "return": {
+                "description": "ok  Wenn die Strecke nicht gefahren werden kann (zu wenige Kilometer übrig) wird false zurückgegeben. Ansonsten true",
+                "type": "Boolean"
+            },
+            "class": "Car",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 87,
+            "description": "Gibt alle Werte des Objekts in einem Satz zurück",
+            "itemtype": "method",
+            "name": "toString",
+            "return": {
+                "description": "satz  \"Auto Id von Standort Heimatstandort. Aktueller Standort: aktStandort. Verfügbare Kilometer: 2030km. Gefahrene Kilometer: 1980km (übrig: 50km)\"",
+                "type": "String"
+            },
+            "class": "Car",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 98,
+            "description": "Array für alle Cars-Objekte.",
+            "itemtype": "property",
+            "name": "carsArray",
+            "type": "Array",
+            "class": "Car",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 127,
+            "description": "Direction Prototype Functions",
+            "class": "Direction",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 133,
+            "description": "Gibt alle Werte des Objekts in einem Satz zurück",
+            "itemtype": "method",
+            "name": "toString",
+            "return": {
+                "description": "satz  \"Von Standort nach Standort sind es 5km (Dauer: 10 min)\"",
+                "type": "String"
+            },
+            "class": "Direction",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 144,
+            "description": "Array für alle Directions-Objekte.",
+            "itemtype": "property",
+            "name": "directionsArray",
+            "type": "Array",
+            "class": "Direction",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 186,
+            "description": "Array für alle Trip-Objekte.",
+            "itemtype": "property",
+            "name": "tripsArray",
+            "type": "Array",
+            "class": "Trip",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 194,
+            "description": "Berechnung gefahrener Kilometer aller Trips",
+            "itemtype": "method",
+            "name": "sumUpTrips",
+            "return": {
+                "description": "Insgesamt gefahrene Kilometer aller Trips",
+                "type": "String"
+            },
+            "class": "Trip",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 224,
+            "description": "Startet die Simulation",
+            "itemtype": "method",
+            "name": "startSimulation",
+            "class": "Simulation",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 243,
+            "description": "Simuliert für einen übergebenen Standort und dessen Name (als googlemaps Directions Ortsname) Fahrten.\nDabei wird für jedes Auto des Standorts ein Objekt angelegt. Dann die Durchschnittskilometer +- 20% für jedes auto festgelegt und das Auto \"los\" geschickt.",
+            "itemtype": "method",
+            "name": "simulatePlace",
+            "params": [
+                {
+                    "name": "p",
+                    "description": "Standort",
+                    "type": "Object"
+                },
+                {
+                    "name": "oa",
+                    "description": "Standortadresse als googlemaps Directions Ortsangabe",
+                    "type": "String"
+                }
+            ],
+            "class": "Simulation",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 261,
+            "description": "Simmuliert Fahrten für ein übergebenes Auto",
+            "itemtype": "method",
+            "name": "simulateCar",
+            "params": [
+                {
+                    "name": "car",
+                    "description": "Das zu simulierende Auto",
+                    "type": "Car"
+                }
+            ],
+            "class": "Simulation",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 286,
+            "description": "Baut das GoogleMapsDirections Objekt etwas um",
+            "params": [
+                {
+                    "name": "d",
+                    "description": "googlemaps Directions",
+                    "type": "Object"
+                }
+            ],
+            "class": "Simulation",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 306,
+            "description": "Gibt einen String für die Simulation aus: Was wurde simmuliert. (Wieviele Standorte, Autos, Strecken usw.)",
+            "itemtype": "method",
+            "name": "toString",
+            "return": {
+                "description": "Es wurden....",
+                "type": "String"
+            },
+            "class": "Simulation",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 316,
+            "description": "Liefer eine Date Objekt mit einer zufälligen Uhrzeit für einen Trip. Dabei sind die Zufallswerte gewichtet.",
+            "itemtype": "method",
+            "name": "getRandomTimeForMonth",
+            "params": [
+                {
+                    "name": "month",
+                    "description": "monat [1-12], das Jahr ist das aktuelle",
+                    "type": "Number"
+                }
+            ],
+            "return": {
+                "description": "Datum-Objekt mit gesetzer Uhrzeit",
+                "type": "Date"
+            },
+            "class": "Simulation",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 342,
+            "description": "Rechnet einen prozentualen Aufschlag (+/-) auf die Kilometer auf",
+            "itemtype": "method",
+            "name": "getRandomKMWithRange",
+            "params": [
+                {
+                    "name": "km",
+                    "description": "Die zu grunde liegenden Kilometer",
+                    "type": "Number"
+                },
+                {
+                    "name": "percentage",
+                    "description": "Der anzurechnende Aufschlaf",
+                    "type": "Number"
+                }
+            ],
+            "return": {
+                "description": "Prozentualer Aufschlag auf die Kilometer",
+                "type": "Number"
+            },
+            "class": "Simulation",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 355,
+            "description": "Liefert eine Zufallszahl zwischen min und max",
+            "itemtype": "method",
+            "name": "getRandomInt",
+            "params": [
+                {
+                    "name": "min",
+                    "description": "Unteregrenze",
+                    "type": "Number"
+                },
+                {
+                    "name": "max",
+                    "description": "Oberegrenze",
+                    "type": "Number"
+                }
+            ],
+            "return": {
+                "description": "Zufallszahl zwischen min und max",
+                "type": "Number"
+            },
+            "class": "Simulation",
+            "module": "Simulation"
+        },
+        {
+            "file": "../public/simulation.js",
+            "line": 376,
+            "description": "Webworker Event zur Kommunikation mit dem Parent.",
+            "itemtype": "event",
+            "name": "message",
+            "params": [
+                {
+                    "name": "e",
+                    "description": "Enthält Kommando und Informationen für das Kommando",
+                    "type": "Object"
+                }
+            ],
+            "class": "Simulation",
+            "module": "Simulation"
+        }
+    ],
+    "warnings": [
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../client/loader.js:21"
+        },
+        {
+            "message": "Missing item type\nNachricht vom Worker",
+            "line": " ../client/TripGenerator.js:137"
+        },
+        {
+            "message": "Missing item type\nError vom Worker",
+            "line": " ../client/TripGenerator.js:154"
+        },
+        {
+            "message": "Missing item type\nVerknüpft jeden Standort miteinander und erzeugt ein googleMapsLatLng-Objekt",
+            "line": " ../client/TripGenerator.js:161"
+        },
+        {
+            "message": "Missing item type\nSendet die Orte and den google-Directions Service und schickt die Antwort an ein Callback",
+            "line": " ../client/TripGenerator.js:177"
+        },
+        {
+            "message": "Missing item type\nCallback für die google-Directions anfrage.",
+            "line": " ../client/TripGenerator.js:194"
+        },
+        {
+            "message": "Missing item type\nalmond 0.1.4 Copyright (c) 2011, The Dojo Foundation All Rights Reserved.\nAvailable via the MIT or new BSD license.\nsee: http://github.com/jrburke/almond for details",
+            "line": " ../client/loader.js:2"
+        },
+        {
+            "message": "Missing item type\nGiven a relative module name, like ./something, normalize it to\na real name that can be mapped to a path.",
+            "line": " ../client/loader.js:21"
+        },
+        {
+            "message": "Missing item type\nMakes a name map, normalizing the name, and using a plugin\nfor normalization if necessary. Grabs a ref to plugin\ntoo, as an optimization.",
+            "line": " ../client/loader.js:167"
+        },
+        {
+            "message": "Missing item type\nJust drops the config on the floor, but returns req in case\nthe config return value is used.",
+            "line": " ../client/loader.js:313"
+        },
+        {
+            "message": "Missing item type\nCar Prototype Functions",
+            "line": " ../public/simulation.js:57"
+        },
+        {
+            "message": "Missing item type\nDirection Prototype Functions",
+            "line": " ../public/simulation.js:127"
+        },
+        {
+            "message": "Missing item type\nBaut das GoogleMapsDirections Objekt etwas um",
+            "line": " ../public/simulation.js:286"
+        }
+    ]
+}

@@ -1,0 +1,4566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../client/loader.js - TripGenerator</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="hd" class="yui3-g header">
+        <div class="yui3-u-3-4">
+            
+                <h1><img src="../assets/css/logo.png" title="TripGenerator"></h1>
+            
+        </div>
+        <div class="yui3-u-1-4 version">
+            <em>API Docs for: 0.3</em>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/Car.html">Car</a></li>
+            
+                <li><a href="../classes/Direction.html">Direction</a></li>
+            
+                <li><a href="../classes/Place.html">Place</a></li>
+            
+                <li><a href="../classes/Simulation.html">Simulation</a></li>
+            
+                <li><a href="../classes/Trip.html">Trip</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+                <li><a href="../modules/Simulation.html">Simulation</a></li>
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../client/loader.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+(function () {
+/**
+ * almond 0.1.4 Copyright (c) 2011, The Dojo Foundation All Rights Reserved.
+ * Available via the MIT or new BSD license.
+ * see: http://github.com/jrburke/almond for details
+ */
+//Going sloppy to avoid &#x27;use strict&#x27; string cost, but strict practices should
+//be followed.
+/*jslint sloppy: true */
+/*global setTimeout: false */
+
+var requirejs, require, define;
+(function (undef) {
+    var main, req,
+        defined = {},
+        waiting = {},
+        config = {},
+        defining = {},
+        aps = [].slice;
+
+    /**
+     * Given a relative module name, like ./something, normalize it to
+     * a real name that can be mapped to a path.
+     * @param {String} name the relative name
+     * @param {String} baseName a real name that the name arg is relative
+     * to.
+     * @returns {String} normalized name
+     */
+    function normalize(name, baseName) {
+        var nameParts, nameSegment, mapValue, foundMap,
+            foundI, foundStarMap, starI, i, j, part,
+            baseParts = baseName &amp;&amp; baseName.split(&quot;/&quot;),
+            map = config.map,
+            starMap = (map &amp;&amp; map[&#x27;*&#x27;]) || {};
+
+        //Adjust any relative paths.
+        if (name &amp;&amp; name.charAt(0) === &quot;.&quot;) {
+            //If have a base name, try to normalize against it,
+            //otherwise, assume it is a top-level require that will
+            //be relative to baseUrl in the end.
+            if (baseName) {
+                //Convert baseName to array, and lop off the last part,
+                //so that . matches that &quot;directory&quot; and not name of the baseName&#x27;s
+                //module. For instance, baseName of &quot;one/two/three&quot;, maps to
+                //&quot;one/two/three.js&quot;, but we want the directory, &quot;one/two&quot; for
+                //this normalization.
+                baseParts = baseParts.slice(0, baseParts.length - 1);
+
+                name = baseParts.concat(name.split(&quot;/&quot;));
+
+                //start trimDots
+                for (i = 0; i &lt; name.length; i += 1) {
+                    part = name[i];
+                    if (part === &quot;.&quot;) {
+                        name.splice(i, 1);
+                        i -= 1;
+                    } else if (part === &quot;..&quot;) {
+                        if (i === 1 &amp;&amp; (name[2] === &#x27;..&#x27; || name[0] === &#x27;..&#x27;)) {
+                            //End of the line. Keep at least one non-dot
+                            //path segment at the front so it can be mapped
+                            //correctly to disk. Otherwise, there is likely
+                            //no path mapping for a path starting with &#x27;..&#x27;.
+                            //This can still fail, but catches the most reasonable
+                            //uses of ..
+                            break;
+                        } else if (i &gt; 0) {
+                            name.splice(i - 1, 2);
+                            i -= 2;
+                        }
+                    }
+                }
+                //end trimDots
+
+                name = name.join(&quot;/&quot;);
+            }
+        }
+
+        //Apply map config if available.
+        if ((baseParts || starMap) &amp;&amp; map) {
+            nameParts = name.split(&#x27;/&#x27;);
+
+            for (i = nameParts.length; i &gt; 0; i -= 1) {
+                nameSegment = nameParts.slice(0, i).join(&quot;/&quot;);
+
+                if (baseParts) {
+                    //Find the longest baseName segment match in the config.
+                    //So, do joins on the biggest to smallest lengths of baseParts.
+                    for (j = baseParts.length; j &gt; 0; j -= 1) {
+                        mapValue = map[baseParts.slice(0, j).join(&#x27;/&#x27;)];
+
+                        //baseName segment has  config, find if it has one for
+                        //this name.
+                        if (mapValue) {
+                            mapValue = mapValue[nameSegment];
+                            if (mapValue) {
+                                //Match, update name to the new value.
+                                foundMap = mapValue;
+                                foundI = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (foundMap) {
+                    break;
+                }
+
+                //Check for a star map match, but just hold on to it,
+                //if there is a shorter segment match later in a matching
+                //config, then favor over this star map.
+                if (!foundStarMap &amp;&amp; starMap &amp;&amp; starMap[nameSegment]) {
+                    foundStarMap = starMap[nameSegment];
+                    starI = i;
+                }
+            }
+
+            if (!foundMap &amp;&amp; foundStarMap) {
+                foundMap = foundStarMap;
+                foundI = starI;
+            }
+
+            if (foundMap) {
+                nameParts.splice(0, foundI, foundMap);
+                name = nameParts.join(&#x27;/&#x27;);
+            }
+        }
+
+        return name;
+    }
+
+    function makeRequire(relName, forceSync) {
+        return function () {
+            //A version of a require function that passes a moduleName
+            //value for items that may need to
+            //look up paths relative to the moduleName
+            return req.apply(undef, aps.call(arguments, 0).concat([relName, forceSync]));
+        };
+    }
+
+    function makeNormalize(relName) {
+        return function (name) {
+            return normalize(name, relName);
+        };
+    }
+
+    function makeLoad(depName) {
+        return function (value) {
+            defined[depName] = value;
+        };
+    }
+
+    function callDep(name) {
+        if (waiting.hasOwnProperty(name)) {
+            var args = waiting[name];
+            delete waiting[name];
+            defining[name] = true;
+            main.apply(undef, args);
+        }
+
+        if (!defined.hasOwnProperty(name)) {
+            throw new Error(&#x27;No &#x27; + name);
+        }
+        return defined[name];
+    }
+
+    /**
+     * Makes a name map, normalizing the name, and using a plugin
+     * for normalization if necessary. Grabs a ref to plugin
+     * too, as an optimization.
+     */
+    function makeMap(name, relName) {
+        var prefix, plugin,
+            index = name.indexOf(&#x27;!&#x27;);
+
+        if (index !== -1) {
+            prefix = normalize(name.slice(0, index), relName);
+            name = name.slice(index + 1);
+            plugin = callDep(prefix);
+
+            //Normalize according
+            if (plugin &amp;&amp; plugin.normalize) {
+                name = plugin.normalize(name, makeNormalize(relName));
+            } else {
+                name = normalize(name, relName);
+            }
+        } else {
+            name = normalize(name, relName);
+        }
+
+        //Using ridiculous property names for space reasons
+        return {
+            f: prefix ? prefix + &#x27;!&#x27; + name : name, //fullName
+            n: name,
+            p: plugin
+        };
+    }
+
+    function makeConfig(name) {
+        return function () {
+            return (config &amp;&amp; config.config &amp;&amp; config.config[name]) || {};
+        };
+    }
+
+    main = function (name, deps, callback, relName) {
+        var cjsModule, depName, ret, map, i,
+            args = [],
+            usingExports;
+
+        //Use name if no relName
+        relName = relName || name;
+
+        //Call the callback to define the module, if necessary.
+        if (typeof callback === &#x27;function&#x27;) {
+
+            //Pull out the defined dependencies and pass the ordered
+            //values to the callback.
+            //Default to [require, exports, module] if no deps
+            deps = !deps.length &amp;&amp; callback.length ? [&#x27;require&#x27;, &#x27;exports&#x27;, &#x27;module&#x27;] : deps;
+            for (i = 0; i &lt; deps.length; i += 1) {
+                map = makeMap(deps[i], relName);
+                depName = map.f;
+
+                //Fast path CommonJS standard dependencies.
+                if (depName === &quot;require&quot;) {
+                    args[i] = makeRequire(name);
+                } else if (depName === &quot;exports&quot;) {
+                    //CommonJS module spec 1.1
+                    args[i] = defined[name] = {};
+                    usingExports = true;
+                } else if (depName === &quot;module&quot;) {
+                    //CommonJS module spec 1.1
+                    cjsModule = args[i] = {
+                        id: name,
+                        uri: &#x27;&#x27;,
+                        exports: defined[name],
+                        config: makeConfig(name)
+                    };
+                } else if (defined.hasOwnProperty(depName) || waiting.hasOwnProperty(depName)) {
+                    args[i] = callDep(depName);
+                } else if (map.p) {
+                    map.p.load(map.n, makeRequire(relName, true), makeLoad(depName), {});
+                    args[i] = defined[depName];
+                } else if (!defining[depName]) {
+                    throw new Error(name + &#x27; missing &#x27; + depName);
+                }
+            }
+
+            ret = callback.apply(defined[name], args);
+
+            if (name) {
+                //If setting exports via &quot;module&quot; is in play,
+                //favor that over return value and exports. After that,
+                //favor a non-undefined return value over exports use.
+                if (cjsModule &amp;&amp; cjsModule.exports !== undef &amp;&amp;
+                        cjsModule.exports !== defined[name]) {
+                    defined[name] = cjsModule.exports;
+                } else if (ret !== undef || !usingExports) {
+                    //Use the return value from the function.
+                    defined[name] = ret;
+                }
+            }
+        } else if (name) {
+            //May just be an object definition for the module. Only
+            //worry about defining if have a module name.
+            defined[name] = callback;
+        }
+    };
+
+    requirejs = require = req = function (deps, callback, relName, forceSync, alt) {
+        if (typeof deps === &quot;string&quot;) {
+            //Just return the module wanted. In this scenario, the
+            //deps arg is the module name, and second arg (if passed)
+            //is just the relName.
+            //Normalize module name, if it contains . or ..
+            return callDep(makeMap(deps, callback).f);
+        } else if (!deps.splice) {
+            //deps is a config object, not an array.
+            config = deps;
+            if (callback.splice) {
+                //callback is an array, which means it is a dependency list.
+                //Adjust args if there are dependencies
+                deps = callback;
+                callback = relName;
+                relName = null;
+            } else {
+                deps = undef;
+            }
+        }
+
+        //Support require([&#x27;a&#x27;])
+        callback = callback || function () {};
+
+        //If relName is a function, it is an errback handler,
+        //so remove it.
+        if (typeof relName === &#x27;function&#x27;) {
+            relName = forceSync;
+            forceSync = alt;
+        }
+
+        //Simulate async callback;
+        if (forceSync) {
+            main(undef, deps, callback, relName);
+        } else {
+            setTimeout(function () {
+                main(undef, deps, callback, relName);
+            }, 15);
+        }
+
+        return req;
+    };
+
+    /**
+     * Just drops the config on the floor, but returns req in case
+     * the config return value is used.
+     */
+    req.config = function (cfg) {
+        config = cfg;
+        return req;
+    };
+
+    define = function (name, deps, callback) {
+
+        //This module may not have dependencies
+        if (!deps.splice) {
+            //deps is not an array, so probably means
+            //an object literal or factory function for
+            //the value. Adjust args.
+            callback = deps;
+            deps = [];
+        }
+
+        waiting[name] = [name, deps, callback];
+    };
+
+    define.amd = {
+        jQuery: true
+    };
+}());
+
+define(&quot;almond&quot;, function(){});
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-transition&#x27;,[&#x27;jquery&#x27;], function () { (function () {
+
+/* ===================================================
+ * bootstrap-transition.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#transitions
+ * ===================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================== */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+  /* CSS TRANSITION SUPPORT (http://www.modernizr.com/)
+   * ======================================================= */
+
+  $(function () {
+
+    $.support.transition = (function () {
+
+      var transitionEnd = (function () {
+
+        var el = document.createElement(&#x27;bootstrap&#x27;)
+          , transEndEventNames = {
+               &#x27;WebkitTransition&#x27; : &#x27;webkitTransitionEnd&#x27;
+            ,  &#x27;MozTransition&#x27;    : &#x27;transitionend&#x27;
+            ,  &#x27;OTransition&#x27;      : &#x27;oTransitionEnd otransitionend&#x27;
+            ,  &#x27;transition&#x27;       : &#x27;transitionend&#x27;
+            }
+          , name
+
+        for (name in transEndEventNames){
+          if (el.style[name] !== undefined) {
+            return transEndEventNames[name]
+          }
+        }
+
+      }())
+
+      return transitionEnd &amp;&amp; {
+        end: transitionEnd
+      }
+
+    })()
+
+  })
+
+}(window.jQuery);
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-affix&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* ==========================================================
+ * bootstrap-affix.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#affix
+ * ==========================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================== */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* AFFIX CLASS DEFINITION
+  * ====================== */
+
+  var Affix = function (element, options) {
+    this.options = $.extend({}, $.fn.affix.defaults, options)
+    this.$window = $(window)
+      .on(&#x27;scroll.affix.data-api&#x27;, $.proxy(this.checkPosition, this))
+      .on(&#x27;click.affix.data-api&#x27;,  $.proxy(function () { setTimeout($.proxy(this.checkPosition, this), 1) }, this))
+    this.$element = $(element)
+    this.checkPosition()
+  }
+
+  Affix.prototype.checkPosition = function () {
+    if (!this.$element.is(&#x27;:visible&#x27;)) return
+
+    var scrollHeight = $(document).height()
+      , scrollTop = this.$window.scrollTop()
+      , position = this.$element.offset()
+      , offset = this.options.offset
+      , offsetBottom = offset.bottom
+      , offsetTop = offset.top
+      , reset = &#x27;affix affix-top affix-bottom&#x27;
+      , affix
+
+    if (typeof offset != &#x27;object&#x27;) offsetBottom = offsetTop = offset
+    if (typeof offsetTop == &#x27;function&#x27;) offsetTop = offset.top()
+    if (typeof offsetBottom == &#x27;function&#x27;) offsetBottom = offset.bottom()
+
+    affix = this.unpin != null &amp;&amp; (scrollTop + this.unpin &lt;= position.top) ?
+      false    : offsetBottom != null &amp;&amp; (position.top + this.$element.height() &gt;= scrollHeight - offsetBottom) ?
+      &#x27;bottom&#x27; : offsetTop != null &amp;&amp; scrollTop &lt;= offsetTop ?
+      &#x27;top&#x27;    : false
+
+    if (this.affixed === affix) return
+
+    this.affixed = affix
+    this.unpin = affix == &#x27;bottom&#x27; ? position.top - scrollTop : null
+
+    this.$element.removeClass(reset).addClass(&#x27;affix&#x27; + (affix ? &#x27;-&#x27; + affix : &#x27;&#x27;))
+  }
+
+
+ /* AFFIX PLUGIN DEFINITION
+  * ======================= */
+
+  var old = $.fn.affix
+
+  $.fn.affix = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;affix&#x27;)
+        , options = typeof option == &#x27;object&#x27; &amp;&amp; option
+      if (!data) $this.data(&#x27;affix&#x27;, (data = new Affix(this, options)))
+      if (typeof option == &#x27;string&#x27;) data[option]()
+    })
+  }
+
+  $.fn.affix.Constructor = Affix
+
+  $.fn.affix.defaults = {
+    offset: 0
+  }
+
+
+ /* AFFIX NO CONFLICT
+  * ================= */
+
+  $.fn.affix.noConflict = function () {
+    $.fn.affix = old
+    return this
+  }
+
+
+ /* AFFIX DATA-API
+  * ============== */
+
+  $(window).on(&#x27;load&#x27;, function () {
+    $(&#x27;[data-spy=&quot;affix&quot;]&#x27;).each(function () {
+      var $spy = $(this)
+        , data = $spy.data()
+
+      data.offset = data.offset || {}
+
+      data.offsetBottom &amp;&amp; (data.offset.bottom = data.offsetBottom)
+      data.offsetTop &amp;&amp; (data.offset.top = data.offsetTop)
+
+      $spy.affix(data)
+    })
+  })
+
+
+}(window.jQuery);
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-alert&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* ==========================================================
+ * bootstrap-alert.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#alerts
+ * ==========================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================== */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* ALERT CLASS DEFINITION
+  * ====================== */
+
+  var dismiss = &#x27;[data-dismiss=&quot;alert&quot;]&#x27;
+    , Alert = function (el) {
+        $(el).on(&#x27;click&#x27;, dismiss, this.close)
+      }
+
+  Alert.prototype.close = function (e) {
+    var $this = $(this)
+      , selector = $this.attr(&#x27;data-target&#x27;)
+      , $parent
+
+    if (!selector) {
+      selector = $this.attr(&#x27;href&#x27;)
+      selector = selector &amp;&amp; selector.replace(/.*(?=#[^\s]*$)/, &#x27;&#x27;) //strip for ie7
+    }
+
+    $parent = $(selector)
+
+    e &amp;&amp; e.preventDefault()
+
+    $parent.length || ($parent = $this.hasClass(&#x27;alert&#x27;) ? $this : $this.parent())
+
+    $parent.trigger(e = $.Event(&#x27;close&#x27;))
+
+    if (e.isDefaultPrevented()) return
+
+    $parent.removeClass(&#x27;in&#x27;)
+
+    function removeElement() {
+      $parent
+        .trigger(&#x27;closed&#x27;)
+        .remove()
+    }
+
+    $.support.transition &amp;&amp; $parent.hasClass(&#x27;fade&#x27;) ?
+      $parent.on($.support.transition.end, removeElement) :
+      removeElement()
+  }
+
+
+ /* ALERT PLUGIN DEFINITION
+  * ======================= */
+
+  var old = $.fn.alert
+
+  $.fn.alert = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;alert&#x27;)
+      if (!data) $this.data(&#x27;alert&#x27;, (data = new Alert(this)))
+      if (typeof option == &#x27;string&#x27;) data[option].call($this)
+    })
+  }
+
+  $.fn.alert.Constructor = Alert
+
+
+ /* ALERT NO CONFLICT
+  * ================= */
+
+  $.fn.alert.noConflict = function () {
+    $.fn.alert = old
+    return this
+  }
+
+
+ /* ALERT DATA-API
+  * ============== */
+
+  $(document).on(&#x27;click.alert.data-api&#x27;, dismiss, Alert.prototype.close)
+
+}(window.jQuery);
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-button&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* ============================================================
+ * bootstrap-button.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#buttons
+ * ============================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ============================================================ */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* BUTTON PUBLIC CLASS DEFINITION
+  * ============================== */
+
+  var Button = function (element, options) {
+    this.$element = $(element)
+    this.options = $.extend({}, $.fn.button.defaults, options)
+  }
+
+  Button.prototype.setState = function (state) {
+    var d = &#x27;disabled&#x27;
+      , $el = this.$element
+      , data = $el.data()
+      , val = $el.is(&#x27;input&#x27;) ? &#x27;val&#x27; : &#x27;html&#x27;
+
+    state = state + &#x27;Text&#x27;
+    data.resetText || $el.data(&#x27;resetText&#x27;, $el[val]())
+
+    $el[val](data[state] || this.options[state])
+
+    // push to event loop to allow forms to submit
+    setTimeout(function () {
+      state == &#x27;loadingText&#x27; ?
+        $el.addClass(d).attr(d, d) :
+        $el.removeClass(d).removeAttr(d)
+    }, 0)
+  }
+
+  Button.prototype.toggle = function () {
+    var $parent = this.$element.closest(&#x27;[data-toggle=&quot;buttons-radio&quot;]&#x27;)
+
+    $parent &amp;&amp; $parent
+      .find(&#x27;.active&#x27;)
+      .removeClass(&#x27;active&#x27;)
+
+    this.$element.toggleClass(&#x27;active&#x27;)
+  }
+
+
+ /* BUTTON PLUGIN DEFINITION
+  * ======================== */
+
+  var old = $.fn.button
+
+  $.fn.button = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;button&#x27;)
+        , options = typeof option == &#x27;object&#x27; &amp;&amp; option
+      if (!data) $this.data(&#x27;button&#x27;, (data = new Button(this, options)))
+      if (option == &#x27;toggle&#x27;) data.toggle()
+      else if (option) data.setState(option)
+    })
+  }
+
+  $.fn.button.defaults = {
+    loadingText: &#x27;loading...&#x27;
+  }
+
+  $.fn.button.Constructor = Button
+
+
+ /* BUTTON NO CONFLICT
+  * ================== */
+
+  $.fn.button.noConflict = function () {
+    $.fn.button = old
+    return this
+  }
+
+
+ /* BUTTON DATA-API
+  * =============== */
+
+  $(document).on(&#x27;click.button.data-api&#x27;, &#x27;[data-toggle^=button]&#x27;, function (e) {
+    var $btn = $(e.target)
+    if (!$btn.hasClass(&#x27;btn&#x27;)) $btn = $btn.closest(&#x27;.btn&#x27;)
+    $btn.button(&#x27;toggle&#x27;)
+  })
+
+}(window.jQuery);
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-carousel&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* ==========================================================
+ * bootstrap-carousel.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#carousel
+ * ==========================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================== */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* CAROUSEL CLASS DEFINITION
+  * ========================= */
+
+  var Carousel = function (element, options) {
+    this.$element = $(element)
+    this.$indicators = this.$element.find(&#x27;.carousel-indicators&#x27;)
+    this.options = options
+    this.options.pause == &#x27;hover&#x27; &amp;&amp; this.$element
+      .on(&#x27;mouseenter&#x27;, $.proxy(this.pause, this))
+      .on(&#x27;mouseleave&#x27;, $.proxy(this.cycle, this))
+  }
+
+  Carousel.prototype = {
+
+    cycle: function (e) {
+      if (!e) this.paused = false
+      if (this.interval) clearInterval(this.interval);
+      this.options.interval
+        &amp;&amp; !this.paused
+        &amp;&amp; (this.interval = setInterval($.proxy(this.next, this), this.options.interval))
+      return this
+    }
+
+  , getActiveIndex: function () {
+      this.$active = this.$element.find(&#x27;.item.active&#x27;)
+      this.$items = this.$active.parent().children()
+      return this.$items.index(this.$active)
+    }
+
+  , to: function (pos) {
+      var activeIndex = this.getActiveIndex()
+        , that = this
+
+      if (pos &gt; (this.$items.length - 1) || pos &lt; 0) return
+
+      if (this.sliding) {
+        return this.$element.one(&#x27;slid&#x27;, function () {
+          that.to(pos)
+        })
+      }
+
+      if (activeIndex == pos) {
+        return this.pause().cycle()
+      }
+
+      return this.slide(pos &gt; activeIndex ? &#x27;next&#x27; : &#x27;prev&#x27;, $(this.$items[pos]))
+    }
+
+  , pause: function (e) {
+      if (!e) this.paused = true
+      if (this.$element.find(&#x27;.next, .prev&#x27;).length &amp;&amp; $.support.transition.end) {
+        this.$element.trigger($.support.transition.end)
+        this.cycle(true)
+      }
+      clearInterval(this.interval)
+      this.interval = null
+      return this
+    }
+
+  , next: function () {
+      if (this.sliding) return
+      return this.slide(&#x27;next&#x27;)
+    }
+
+  , prev: function () {
+      if (this.sliding) return
+      return this.slide(&#x27;prev&#x27;)
+    }
+
+  , slide: function (type, next) {
+      var $active = this.$element.find(&#x27;.item.active&#x27;)
+        , $next = next || $active[type]()
+        , isCycling = this.interval
+        , direction = type == &#x27;next&#x27; ? &#x27;left&#x27; : &#x27;right&#x27;
+        , fallback  = type == &#x27;next&#x27; ? &#x27;first&#x27; : &#x27;last&#x27;
+        , that = this
+        , e
+
+      this.sliding = true
+
+      isCycling &amp;&amp; this.pause()
+
+      $next = $next.length ? $next : this.$element.find(&#x27;.item&#x27;)[fallback]()
+
+      e = $.Event(&#x27;slide&#x27;, {
+        relatedTarget: $next[0]
+      , direction: direction
+      })
+
+      if ($next.hasClass(&#x27;active&#x27;)) return
+
+      if (this.$indicators.length) {
+        this.$indicators.find(&#x27;.active&#x27;).removeClass(&#x27;active&#x27;)
+        this.$element.one(&#x27;slid&#x27;, function () {
+          var $nextIndicator = $(that.$indicators.children()[that.getActiveIndex()])
+          $nextIndicator &amp;&amp; $nextIndicator.addClass(&#x27;active&#x27;)
+        })
+      }
+
+      if ($.support.transition &amp;&amp; this.$element.hasClass(&#x27;slide&#x27;)) {
+        this.$element.trigger(e)
+        if (e.isDefaultPrevented()) return
+        $next.addClass(type)
+        $next[0].offsetWidth // force reflow
+        $active.addClass(direction)
+        $next.addClass(direction)
+        this.$element.one($.support.transition.end, function () {
+          $next.removeClass([type, direction].join(&#x27; &#x27;)).addClass(&#x27;active&#x27;)
+          $active.removeClass([&#x27;active&#x27;, direction].join(&#x27; &#x27;))
+          that.sliding = false
+          setTimeout(function () { that.$element.trigger(&#x27;slid&#x27;) }, 0)
+        })
+      } else {
+        this.$element.trigger(e)
+        if (e.isDefaultPrevented()) return
+        $active.removeClass(&#x27;active&#x27;)
+        $next.addClass(&#x27;active&#x27;)
+        this.sliding = false
+        this.$element.trigger(&#x27;slid&#x27;)
+      }
+
+      isCycling &amp;&amp; this.cycle()
+
+      return this
+    }
+
+  }
+
+
+ /* CAROUSEL PLUGIN DEFINITION
+  * ========================== */
+
+  var old = $.fn.carousel
+
+  $.fn.carousel = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;carousel&#x27;)
+        , options = $.extend({}, $.fn.carousel.defaults, typeof option == &#x27;object&#x27; &amp;&amp; option)
+        , action = typeof option == &#x27;string&#x27; ? option : options.slide
+      if (!data) $this.data(&#x27;carousel&#x27;, (data = new Carousel(this, options)))
+      if (typeof option == &#x27;number&#x27;) data.to(option)
+      else if (action) data[action]()
+      else if (options.interval) data.pause().cycle()
+    })
+  }
+
+  $.fn.carousel.defaults = {
+    interval: 5000
+  , pause: &#x27;hover&#x27;
+  }
+
+  $.fn.carousel.Constructor = Carousel
+
+
+ /* CAROUSEL NO CONFLICT
+  * ==================== */
+
+  $.fn.carousel.noConflict = function () {
+    $.fn.carousel = old
+    return this
+  }
+
+ /* CAROUSEL DATA-API
+  * ================= */
+
+  $(document).on(&#x27;click.carousel.data-api&#x27;, &#x27;[data-slide], [data-slide-to]&#x27;, function (e) {
+    var $this = $(this), href
+      , $target = $($this.attr(&#x27;data-target&#x27;) || (href = $this.attr(&#x27;href&#x27;)) &amp;&amp; href.replace(/.*(?=#[^\s]+$)/, &#x27;&#x27;)) //strip for ie7
+      , options = $.extend({}, $target.data(), $this.data())
+      , slideIndex
+
+    $target.carousel(options)
+
+    if (slideIndex = $this.attr(&#x27;data-slide-to&#x27;)) {
+      $target.data(&#x27;carousel&#x27;).pause().to(slideIndex).cycle()
+    }
+
+    e.preventDefault()
+  })
+
+}(window.jQuery);
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-collapse&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* =============================================================
+ * bootstrap-collapse.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#collapse
+ * =============================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ============================================================ */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* COLLAPSE PUBLIC CLASS DEFINITION
+  * ================================ */
+
+  var Collapse = function (element, options) {
+    this.$element = $(element)
+    this.options = $.extend({}, $.fn.collapse.defaults, options)
+
+    if (this.options.parent) {
+      this.$parent = $(this.options.parent)
+    }
+
+    this.options.toggle &amp;&amp; this.toggle()
+  }
+
+  Collapse.prototype = {
+
+    constructor: Collapse
+
+  , dimension: function () {
+      var hasWidth = this.$element.hasClass(&#x27;width&#x27;)
+      return hasWidth ? &#x27;width&#x27; : &#x27;height&#x27;
+    }
+
+  , show: function () {
+      var dimension
+        , scroll
+        , actives
+        , hasData
+
+      if (this.transitioning || this.$element.hasClass(&#x27;in&#x27;)) return
+
+      dimension = this.dimension()
+      scroll = $.camelCase([&#x27;scroll&#x27;, dimension].join(&#x27;-&#x27;))
+      actives = this.$parent &amp;&amp; this.$parent.find(&#x27;&gt; .accordion-group &gt; .in&#x27;)
+
+      if (actives &amp;&amp; actives.length) {
+        hasData = actives.data(&#x27;collapse&#x27;)
+        if (hasData &amp;&amp; hasData.transitioning) return
+        actives.collapse(&#x27;hide&#x27;)
+        hasData || actives.data(&#x27;collapse&#x27;, null)
+      }
+
+      this.$element[dimension](0)
+      this.transition(&#x27;addClass&#x27;, $.Event(&#x27;show&#x27;), &#x27;shown&#x27;)
+      $.support.transition &amp;&amp; this.$element[dimension](this.$element[0][scroll])
+    }
+
+  , hide: function () {
+      var dimension
+      if (this.transitioning || !this.$element.hasClass(&#x27;in&#x27;)) return
+      dimension = this.dimension()
+      this.reset(this.$element[dimension]())
+      this.transition(&#x27;removeClass&#x27;, $.Event(&#x27;hide&#x27;), &#x27;hidden&#x27;)
+      this.$element[dimension](0)
+    }
+
+  , reset: function (size) {
+      var dimension = this.dimension()
+
+      this.$element
+        .removeClass(&#x27;collapse&#x27;)
+        [dimension](size || &#x27;auto&#x27;)
+        [0].offsetWidth
+
+      this.$element[size !== null ? &#x27;addClass&#x27; : &#x27;removeClass&#x27;](&#x27;collapse&#x27;)
+
+      return this
+    }
+
+  , transition: function (method, startEvent, completeEvent) {
+      var that = this
+        , complete = function () {
+            if (startEvent.type == &#x27;show&#x27;) that.reset()
+            that.transitioning = 0
+            that.$element.trigger(completeEvent)
+          }
+
+      this.$element.trigger(startEvent)
+
+      if (startEvent.isDefaultPrevented()) return
+
+      this.transitioning = 1
+
+      this.$element[method](&#x27;in&#x27;)
+
+      $.support.transition &amp;&amp; this.$element.hasClass(&#x27;collapse&#x27;) ?
+        this.$element.one($.support.transition.end, complete) :
+        complete()
+    }
+
+  , toggle: function () {
+      this[this.$element.hasClass(&#x27;in&#x27;) ? &#x27;hide&#x27; : &#x27;show&#x27;]()
+    }
+
+  }
+
+
+ /* COLLAPSE PLUGIN DEFINITION
+  * ========================== */
+
+  var old = $.fn.collapse
+
+  $.fn.collapse = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;collapse&#x27;)
+        , options = $.extend({}, $.fn.collapse.defaults, $this.data(), typeof option == &#x27;object&#x27; &amp;&amp; option)
+      if (!data) $this.data(&#x27;collapse&#x27;, (data = new Collapse(this, options)))
+      if (typeof option == &#x27;string&#x27;) data[option]()
+    })
+  }
+
+  $.fn.collapse.defaults = {
+    toggle: true
+  }
+
+  $.fn.collapse.Constructor = Collapse
+
+
+ /* COLLAPSE NO CONFLICT
+  * ==================== */
+
+  $.fn.collapse.noConflict = function () {
+    $.fn.collapse = old
+    return this
+  }
+
+
+ /* COLLAPSE DATA-API
+  * ================= */
+
+  $(document).on(&#x27;click.collapse.data-api&#x27;, &#x27;[data-toggle=collapse]&#x27;, function (e) {
+    var $this = $(this), href
+      , target = $this.attr(&#x27;data-target&#x27;)
+        || e.preventDefault()
+        || (href = $this.attr(&#x27;href&#x27;)) &amp;&amp; href.replace(/.*(?=#[^\s]+$)/, &#x27;&#x27;) //strip for ie7
+      , option = $(target).data(&#x27;collapse&#x27;) ? &#x27;toggle&#x27; : $this.data()
+    $this[$(target).hasClass(&#x27;in&#x27;) ? &#x27;addClass&#x27; : &#x27;removeClass&#x27;](&#x27;collapsed&#x27;)
+    $(target).collapse(option)
+  })
+
+}(window.jQuery);
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-dropdown&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* ============================================================
+ * bootstrap-dropdown.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#dropdowns
+ * ============================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ============================================================ */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* DROPDOWN CLASS DEFINITION
+  * ========================= */
+
+  var toggle = &#x27;[data-toggle=dropdown]&#x27;
+    , Dropdown = function (element) {
+        var $el = $(element).on(&#x27;click.dropdown.data-api&#x27;, this.toggle)
+        $(&#x27;html&#x27;).on(&#x27;click.dropdown.data-api&#x27;, function () {
+          $el.parent().removeClass(&#x27;open&#x27;)
+        })
+      }
+
+  Dropdown.prototype = {
+
+    constructor: Dropdown
+
+  , toggle: function (e) {
+      var $this = $(this)
+        , $parent
+        , isActive
+
+      if ($this.is(&#x27;.disabled, :disabled&#x27;)) return
+
+      $parent = getParent($this)
+
+      isActive = $parent.hasClass(&#x27;open&#x27;)
+
+      clearMenus()
+
+      if (!isActive) {
+        $parent.toggleClass(&#x27;open&#x27;)
+      }
+
+      $this.focus()
+
+      return false
+    }
+
+  , keydown: function (e) {
+      var $this
+        , $items
+        , $active
+        , $parent
+        , isActive
+        , index
+
+      if (!/(38|40|27)/.test(e.keyCode)) return
+
+      $this = $(this)
+
+      e.preventDefault()
+      e.stopPropagation()
+
+      if ($this.is(&#x27;.disabled, :disabled&#x27;)) return
+
+      $parent = getParent($this)
+
+      isActive = $parent.hasClass(&#x27;open&#x27;)
+
+      if (!isActive || (isActive &amp;&amp; e.keyCode == 27)) {
+        if (e.which == 27) $parent.find(toggle).focus()
+        return $this.click()
+      }
+
+      $items = $(&#x27;[role=menu] li:not(.divider):visible a&#x27;, $parent)
+
+      if (!$items.length) return
+
+      index = $items.index($items.filter(&#x27;:focus&#x27;))
+
+      if (e.keyCode == 38 &amp;&amp; index &gt; 0) index--                                        // up
+      if (e.keyCode == 40 &amp;&amp; index &lt; $items.length - 1) index++                        // down
+      if (!~index) index = 0
+
+      $items
+        .eq(index)
+        .focus()
+    }
+
+  }
+
+  function clearMenus() {
+    $(toggle).each(function () {
+      getParent($(this)).removeClass(&#x27;open&#x27;)
+    })
+  }
+
+  function getParent($this) {
+    var selector = $this.attr(&#x27;data-target&#x27;)
+      , $parent
+
+    if (!selector) {
+      selector = $this.attr(&#x27;href&#x27;)
+      selector = selector &amp;&amp; /#/.test(selector) &amp;&amp; selector.replace(/.*(?=#[^\s]*$)/, &#x27;&#x27;) //strip for ie7
+    }
+
+    $parent = selector &amp;&amp; $(selector)
+
+    if (!$parent || !$parent.length) $parent = $this.parent()
+
+    return $parent
+  }
+
+
+  /* DROPDOWN PLUGIN DEFINITION
+   * ========================== */
+
+  var old = $.fn.dropdown
+
+  $.fn.dropdown = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;dropdown&#x27;)
+      if (!data) $this.data(&#x27;dropdown&#x27;, (data = new Dropdown(this)))
+      if (typeof option == &#x27;string&#x27;) data[option].call($this)
+    })
+  }
+
+  $.fn.dropdown.Constructor = Dropdown
+
+
+ /* DROPDOWN NO CONFLICT
+  * ==================== */
+
+  $.fn.dropdown.noConflict = function () {
+    $.fn.dropdown = old
+    return this
+  }
+
+
+  /* APPLY TO STANDARD DROPDOWN ELEMENTS
+   * =================================== */
+
+  $(document)
+    .on(&#x27;click.dropdown.data-api&#x27;, clearMenus)
+    .on(&#x27;click.dropdown.data-api&#x27;, &#x27;.dropdown form&#x27;, function (e) { e.stopPropagation() })
+    .on(&#x27;click.dropdown-menu&#x27;, function (e) { e.stopPropagation() })
+    .on(&#x27;click.dropdown.data-api&#x27;  , toggle, Dropdown.prototype.toggle)
+    .on(&#x27;keydown.dropdown.data-api&#x27;, toggle + &#x27;, [role=menu]&#x27; , Dropdown.prototype.keydown)
+
+}(window.jQuery);
+
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-modal&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* =========================================================
+ * bootstrap-modal.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#modals
+ * =========================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================= */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* MODAL CLASS DEFINITION
+  * ====================== */
+
+  var Modal = function (element, options) {
+    this.options = options
+    this.$element = $(element)
+      .delegate(&#x27;[data-dismiss=&quot;modal&quot;]&#x27;, &#x27;click.dismiss.modal&#x27;, $.proxy(this.hide, this))
+    this.options.remote &amp;&amp; this.$element.find(&#x27;.modal-body&#x27;).load(this.options.remote)
+  }
+
+  Modal.prototype = {
+
+      constructor: Modal
+
+    , toggle: function () {
+        return this[!this.isShown ? &#x27;show&#x27; : &#x27;hide&#x27;]()
+      }
+
+    , show: function () {
+        var that = this
+          , e = $.Event(&#x27;show&#x27;)
+
+        this.$element.trigger(e)
+
+        if (this.isShown || e.isDefaultPrevented()) return
+
+        this.isShown = true
+
+        this.escape()
+
+        this.backdrop(function () {
+          var transition = $.support.transition &amp;&amp; that.$element.hasClass(&#x27;fade&#x27;)
+
+          if (!that.$element.parent().length) {
+            that.$element.appendTo(document.body) //don&#x27;t move modals dom position
+          }
+
+          that.$element.show()
+
+          if (transition) {
+            that.$element[0].offsetWidth // force reflow
+          }
+
+          that.$element
+            .addClass(&#x27;in&#x27;)
+            .attr(&#x27;aria-hidden&#x27;, false)
+
+          that.enforceFocus()
+
+          transition ?
+            that.$element.one($.support.transition.end, function () { that.$element.focus().trigger(&#x27;shown&#x27;) }) :
+            that.$element.focus().trigger(&#x27;shown&#x27;)
+
+        })
+      }
+
+    , hide: function (e) {
+        e &amp;&amp; e.preventDefault()
+
+        var that = this
+
+        e = $.Event(&#x27;hide&#x27;)
+
+        this.$element.trigger(e)
+
+        if (!this.isShown || e.isDefaultPrevented()) return
+
+        this.isShown = false
+
+        this.escape()
+
+        $(document).off(&#x27;focusin.modal&#x27;)
+
+        this.$element
+          .removeClass(&#x27;in&#x27;)
+          .attr(&#x27;aria-hidden&#x27;, true)
+
+        $.support.transition &amp;&amp; this.$element.hasClass(&#x27;fade&#x27;) ?
+          this.hideWithTransition() :
+          this.hideModal()
+      }
+
+    , enforceFocus: function () {
+        var that = this
+        $(document).on(&#x27;focusin.modal&#x27;, function (e) {
+          if (that.$element[0] !== e.target &amp;&amp; !that.$element.has(e.target).length) {
+            that.$element.focus()
+          }
+        })
+      }
+
+    , escape: function () {
+        var that = this
+        if (this.isShown &amp;&amp; this.options.keyboard) {
+          this.$element.on(&#x27;keyup.dismiss.modal&#x27;, function ( e ) {
+            e.which == 27 &amp;&amp; that.hide()
+          })
+        } else if (!this.isShown) {
+          this.$element.off(&#x27;keyup.dismiss.modal&#x27;)
+        }
+      }
+
+    , hideWithTransition: function () {
+        var that = this
+          , timeout = setTimeout(function () {
+              that.$element.off($.support.transition.end)
+              that.hideModal()
+            }, 500)
+
+        this.$element.one($.support.transition.end, function () {
+          clearTimeout(timeout)
+          that.hideModal()
+        })
+      }
+
+    , hideModal: function () {
+        var that = this
+        this.$element.hide()
+        this.backdrop(function () {
+          that.removeBackdrop()
+          that.$element.trigger(&#x27;hidden&#x27;)
+        })
+      }
+
+    , removeBackdrop: function () {
+        this.$backdrop &amp;&amp; this.$backdrop.remove()
+        this.$backdrop = null
+      }
+
+    , backdrop: function (callback) {
+        var that = this
+          , animate = this.$element.hasClass(&#x27;fade&#x27;) ? &#x27;fade&#x27; : &#x27;&#x27;
+
+        if (this.isShown &amp;&amp; this.options.backdrop) {
+          var doAnimate = $.support.transition &amp;&amp; animate
+
+          this.$backdrop = $(&#x27;&lt;div class=&quot;modal-backdrop &#x27; + animate + &#x27;&quot; /&gt;&#x27;)
+            .appendTo(document.body)
+
+          this.$backdrop.click(
+            this.options.backdrop == &#x27;static&#x27; ?
+              $.proxy(this.$element[0].focus, this.$element[0])
+            : $.proxy(this.hide, this)
+          )
+
+          if (doAnimate) this.$backdrop[0].offsetWidth // force reflow
+
+          this.$backdrop.addClass(&#x27;in&#x27;)
+
+          if (!callback) return
+
+          doAnimate ?
+            this.$backdrop.one($.support.transition.end, callback) :
+            callback()
+
+        } else if (!this.isShown &amp;&amp; this.$backdrop) {
+          this.$backdrop.removeClass(&#x27;in&#x27;)
+
+          $.support.transition &amp;&amp; this.$element.hasClass(&#x27;fade&#x27;)?
+            this.$backdrop.one($.support.transition.end, callback) :
+            callback()
+
+        } else if (callback) {
+          callback()
+        }
+      }
+  }
+
+
+ /* MODAL PLUGIN DEFINITION
+  * ======================= */
+
+  var old = $.fn.modal
+
+  $.fn.modal = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;modal&#x27;)
+        , options = $.extend({}, $.fn.modal.defaults, $this.data(), typeof option == &#x27;object&#x27; &amp;&amp; option)
+      if (!data) $this.data(&#x27;modal&#x27;, (data = new Modal(this, options)))
+      if (typeof option == &#x27;string&#x27;) data[option]()
+      else if (options.show) data.show()
+    })
+  }
+
+  $.fn.modal.defaults = {
+      backdrop: true
+    , keyboard: true
+    , show: true
+  }
+
+  $.fn.modal.Constructor = Modal
+
+
+ /* MODAL NO CONFLICT
+  * ================= */
+
+  $.fn.modal.noConflict = function () {
+    $.fn.modal = old
+    return this
+  }
+
+
+ /* MODAL DATA-API
+  * ============== */
+
+  $(document).on(&#x27;click.modal.data-api&#x27;, &#x27;[data-toggle=&quot;modal&quot;]&#x27;, function (e) {
+    var $this = $(this)
+      , href = $this.attr(&#x27;href&#x27;)
+      , $target = $($this.attr(&#x27;data-target&#x27;) || (href &amp;&amp; href.replace(/.*(?=#[^\s]+$)/, &#x27;&#x27;))) //strip for ie7
+      , option = $target.data(&#x27;modal&#x27;) ? &#x27;toggle&#x27; : $.extend({ remote:!/#/.test(href) &amp;&amp; href }, $target.data(), $this.data())
+
+    e.preventDefault()
+
+    $target
+      .modal(option)
+      .one(&#x27;hide&#x27;, function () {
+        $this.focus()
+      })
+  })
+
+}(window.jQuery);
+
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-tooltip&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* ===========================================================
+ * bootstrap-tooltip.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#tooltips
+ * Inspired by the original jQuery.tipsy by Jason Frame
+ * ===========================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================== */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* TOOLTIP PUBLIC CLASS DEFINITION
+  * =============================== */
+
+  var Tooltip = function (element, options) {
+    this.init(&#x27;tooltip&#x27;, element, options)
+  }
+
+  Tooltip.prototype = {
+
+    constructor: Tooltip
+
+  , init: function (type, element, options) {
+      var eventIn
+        , eventOut
+        , triggers
+        , trigger
+        , i
+
+      this.type = type
+      this.$element = $(element)
+      this.options = this.getOptions(options)
+      this.enabled = true
+
+      triggers = this.options.trigger.split(&#x27; &#x27;)
+
+      for (i = triggers.length; i--;) {
+        trigger = triggers[i]
+        if (trigger == &#x27;click&#x27;) {
+          this.$element.on(&#x27;click.&#x27; + this.type, this.options.selector, $.proxy(this.toggle, this))
+        } else if (trigger != &#x27;manual&#x27;) {
+          eventIn = trigger == &#x27;hover&#x27; ? &#x27;mouseenter&#x27; : &#x27;focus&#x27;
+          eventOut = trigger == &#x27;hover&#x27; ? &#x27;mouseleave&#x27; : &#x27;blur&#x27;
+          this.$element.on(eventIn + &#x27;.&#x27; + this.type, this.options.selector, $.proxy(this.enter, this))
+          this.$element.on(eventOut + &#x27;.&#x27; + this.type, this.options.selector, $.proxy(this.leave, this))
+        }
+      }
+
+      this.options.selector ?
+        (this._options = $.extend({}, this.options, { trigger: &#x27;manual&#x27;, selector: &#x27;&#x27; })) :
+        this.fixTitle()
+    }
+
+  , getOptions: function (options) {
+      options = $.extend({}, $.fn[this.type].defaults, this.$element.data(), options)
+
+      if (options.delay &amp;&amp; typeof options.delay == &#x27;number&#x27;) {
+        options.delay = {
+          show: options.delay
+        , hide: options.delay
+        }
+      }
+
+      return options
+    }
+
+  , enter: function (e) {
+      var defaults = $.fn[this.type].defaults
+        , options = {}
+        , self
+
+      this._options &amp;&amp; $.each(this._options, function (key, value) {
+        if (defaults[key] != value) options[key] = value
+      }, this)
+
+      self = $(e.currentTarget)[this.type](options).data(this.type)
+
+      if (!self.options.delay || !self.options.delay.show) return self.show()
+
+      clearTimeout(this.timeout)
+      self.hoverState = &#x27;in&#x27;
+      this.timeout = setTimeout(function() {
+        if (self.hoverState == &#x27;in&#x27;) self.show()
+      }, self.options.delay.show)
+    }
+
+  , leave: function (e) {
+      var self = $(e.currentTarget)[this.type](this._options).data(this.type)
+
+      if (this.timeout) clearTimeout(this.timeout)
+      if (!self.options.delay || !self.options.delay.hide) return self.hide()
+
+      self.hoverState = &#x27;out&#x27;
+      this.timeout = setTimeout(function() {
+        if (self.hoverState == &#x27;out&#x27;) self.hide()
+      }, self.options.delay.hide)
+    }
+
+  , show: function () {
+      var $tip
+        , pos
+        , actualWidth
+        , actualHeight
+        , placement
+        , tp
+        , e = $.Event(&#x27;show&#x27;)
+
+      if (this.hasContent() &amp;&amp; this.enabled) {
+        this.$element.trigger(e)
+        if (e.isDefaultPrevented()) return
+        $tip = this.tip()
+        this.setContent()
+
+        if (this.options.animation) {
+          $tip.addClass(&#x27;fade&#x27;)
+        }
+
+        placement = typeof this.options.placement == &#x27;function&#x27; ?
+          this.options.placement.call(this, $tip[0], this.$element[0]) :
+          this.options.placement
+
+        $tip
+          .detach()
+          .css({ top: 0, left: 0, display: &#x27;block&#x27; })
+
+        this.options.container ? $tip.appendTo(this.options.container) : $tip.insertAfter(this.$element)
+
+        pos = this.getPosition()
+
+        actualWidth = $tip[0].offsetWidth
+        actualHeight = $tip[0].offsetHeight
+
+        switch (placement) {
+          case &#x27;bottom&#x27;:
+            tp = {top: pos.top + pos.height, left: pos.left + pos.width / 2 - actualWidth / 2}
+            break
+          case &#x27;top&#x27;:
+            tp = {top: pos.top - actualHeight, left: pos.left + pos.width / 2 - actualWidth / 2}
+            break
+          case &#x27;left&#x27;:
+            tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left - actualWidth}
+            break
+          case &#x27;right&#x27;:
+            tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left + pos.width}
+            break
+        }
+
+        this.applyPlacement(tp, placement)
+        this.$element.trigger(&#x27;shown&#x27;)
+      }
+    }
+
+  , applyPlacement: function(offset, placement){
+      var $tip = this.tip()
+        , width = $tip[0].offsetWidth
+        , height = $tip[0].offsetHeight
+        , actualWidth
+        , actualHeight
+        , delta
+        , replace
+
+      $tip
+        .offset(offset)
+        .addClass(placement)
+        .addClass(&#x27;in&#x27;)
+
+      actualWidth = $tip[0].offsetWidth
+      actualHeight = $tip[0].offsetHeight
+
+      if (placement == &#x27;top&#x27; &amp;&amp; actualHeight != height) {
+        offset.top = offset.top + height - actualHeight
+        replace = true
+      }
+
+      if (placement == &#x27;bottom&#x27; || placement == &#x27;top&#x27;) {
+        delta = 0
+
+        if (offset.left &lt; 0){
+          delta = offset.left * -2
+          offset.left = 0
+          $tip.offset(offset)
+          actualWidth = $tip[0].offsetWidth
+          actualHeight = $tip[0].offsetHeight
+        }
+
+        this.replaceArrow(delta - width + actualWidth, actualWidth, &#x27;left&#x27;)
+      } else {
+        this.replaceArrow(actualHeight - height, actualHeight, &#x27;top&#x27;)
+      }
+
+      if (replace) $tip.offset(offset)
+    }
+
+  , replaceArrow: function(delta, dimension, position){
+      this
+        .arrow()
+        .css(position, delta ? (50 * (1 - delta / dimension) + &quot;%&quot;) : &#x27;&#x27;)
+    }
+
+  , setContent: function () {
+      var $tip = this.tip()
+        , title = this.getTitle()
+
+      $tip.find(&#x27;.tooltip-inner&#x27;)[this.options.html ? &#x27;html&#x27; : &#x27;text&#x27;](title)
+      $tip.removeClass(&#x27;fade in top bottom left right&#x27;)
+    }
+
+  , hide: function () {
+      var that = this
+        , $tip = this.tip()
+        , e = $.Event(&#x27;hide&#x27;)
+
+      this.$element.trigger(e)
+      if (e.isDefaultPrevented()) return
+
+      $tip.removeClass(&#x27;in&#x27;)
+
+      function removeWithAnimation() {
+        var timeout = setTimeout(function () {
+          $tip.off($.support.transition.end).detach()
+        }, 500)
+
+        $tip.one($.support.transition.end, function () {
+          clearTimeout(timeout)
+          $tip.detach()
+        })
+      }
+
+      $.support.transition &amp;&amp; this.$tip.hasClass(&#x27;fade&#x27;) ?
+        removeWithAnimation() :
+        $tip.detach()
+
+      this.$element.trigger(&#x27;hidden&#x27;)
+
+      return this
+    }
+
+  , fixTitle: function () {
+      var $e = this.$element
+      if ($e.attr(&#x27;title&#x27;) || typeof($e.attr(&#x27;data-original-title&#x27;)) != &#x27;string&#x27;) {
+        $e.attr(&#x27;data-original-title&#x27;, $e.attr(&#x27;title&#x27;) || &#x27;&#x27;).attr(&#x27;title&#x27;, &#x27;&#x27;)
+      }
+    }
+
+  , hasContent: function () {
+      return this.getTitle()
+    }
+
+  , getPosition: function () {
+      var el = this.$element[0]
+      return $.extend({}, (typeof el.getBoundingClientRect == &#x27;function&#x27;) ? el.getBoundingClientRect() : {
+        width: el.offsetWidth
+      , height: el.offsetHeight
+      }, this.$element.offset())
+    }
+
+  , getTitle: function () {
+      var title
+        , $e = this.$element
+        , o = this.options
+
+      title = $e.attr(&#x27;data-original-title&#x27;)
+        || (typeof o.title == &#x27;function&#x27; ? o.title.call($e[0]) :  o.title)
+
+      return title
+    }
+
+  , tip: function () {
+      return this.$tip = this.$tip || $(this.options.template)
+    }
+
+  , arrow: function(){
+      return this.$arrow = this.$arrow || this.tip().find(&quot;.tooltip-arrow&quot;)
+    }
+
+  , validate: function () {
+      if (!this.$element[0].parentNode) {
+        this.hide()
+        this.$element = null
+        this.options = null
+      }
+    }
+
+  , enable: function () {
+      this.enabled = true
+    }
+
+  , disable: function () {
+      this.enabled = false
+    }
+
+  , toggleEnabled: function () {
+      this.enabled = !this.enabled
+    }
+
+  , toggle: function (e) {
+      var self = e ? $(e.currentTarget)[this.type](this._options).data(this.type) : this
+      self.tip().hasClass(&#x27;in&#x27;) ? self.hide() : self.show()
+    }
+
+  , destroy: function () {
+      this.hide().$element.off(&#x27;.&#x27; + this.type).removeData(this.type)
+    }
+
+  }
+
+
+ /* TOOLTIP PLUGIN DEFINITION
+  * ========================= */
+
+  var old = $.fn.tooltip
+
+  $.fn.tooltip = function ( option ) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;tooltip&#x27;)
+        , options = typeof option == &#x27;object&#x27; &amp;&amp; option
+      if (!data) $this.data(&#x27;tooltip&#x27;, (data = new Tooltip(this, options)))
+      if (typeof option == &#x27;string&#x27;) data[option]()
+    })
+  }
+
+  $.fn.tooltip.Constructor = Tooltip
+
+  $.fn.tooltip.defaults = {
+    animation: true
+  , placement: &#x27;top&#x27;
+  , selector: false
+  , template: &#x27;&lt;div class=&quot;tooltip&quot;&gt;&lt;div class=&quot;tooltip-arrow&quot;&gt;&lt;/div&gt;&lt;div class=&quot;tooltip-inner&quot;&gt;&lt;/div&gt;&lt;/div&gt;&#x27;
+  , trigger: &#x27;hover focus&#x27;
+  , title: &#x27;&#x27;
+  , delay: 0
+  , html: false
+  , container: false
+  }
+
+
+ /* TOOLTIP NO CONFLICT
+  * =================== */
+
+  $.fn.tooltip.noConflict = function () {
+    $.fn.tooltip = old
+    return this
+  }
+
+}(window.jQuery);
+
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-popover&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;,&#x27;bootstrap/bootstrap-tooltip&#x27;], function () { (function () {
+
+/* ===========================================================
+ * bootstrap-popover.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#popovers
+ * ===========================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =========================================================== */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* POPOVER PUBLIC CLASS DEFINITION
+  * =============================== */
+
+  var Popover = function (element, options) {
+    this.init(&#x27;popover&#x27;, element, options)
+  }
+
+
+  /* NOTE: POPOVER EXTENDS BOOTSTRAP-TOOLTIP.js
+     ========================================== */
+
+  Popover.prototype = $.extend({}, $.fn.tooltip.Constructor.prototype, {
+
+    constructor: Popover
+
+  , setContent: function () {
+      var $tip = this.tip()
+        , title = this.getTitle()
+        , content = this.getContent()
+
+      $tip.find(&#x27;.popover-title&#x27;)[this.options.html ? &#x27;html&#x27; : &#x27;text&#x27;](title)
+      $tip.find(&#x27;.popover-content&#x27;)[this.options.html ? &#x27;html&#x27; : &#x27;text&#x27;](content)
+
+      $tip.removeClass(&#x27;fade top bottom left right in&#x27;)
+    }
+
+  , hasContent: function () {
+      return this.getTitle() || this.getContent()
+    }
+
+  , getContent: function () {
+      var content
+        , $e = this.$element
+        , o = this.options
+
+      content = (typeof o.content == &#x27;function&#x27; ? o.content.call($e[0]) :  o.content)
+        || $e.attr(&#x27;data-content&#x27;)
+
+      return content
+    }
+
+  , tip: function () {
+      if (!this.$tip) {
+        this.$tip = $(this.options.template)
+      }
+      return this.$tip
+    }
+
+  , destroy: function () {
+      this.hide().$element.off(&#x27;.&#x27; + this.type).removeData(this.type)
+    }
+
+  })
+
+
+ /* POPOVER PLUGIN DEFINITION
+  * ======================= */
+
+  var old = $.fn.popover
+
+  $.fn.popover = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;popover&#x27;)
+        , options = typeof option == &#x27;object&#x27; &amp;&amp; option
+      if (!data) $this.data(&#x27;popover&#x27;, (data = new Popover(this, options)))
+      if (typeof option == &#x27;string&#x27;) data[option]()
+    })
+  }
+
+  $.fn.popover.Constructor = Popover
+
+  $.fn.popover.defaults = $.extend({} , $.fn.tooltip.defaults, {
+    placement: &#x27;right&#x27;
+  , trigger: &#x27;click&#x27;
+  , content: &#x27;&#x27;
+  , template: &#x27;&lt;div class=&quot;popover&quot;&gt;&lt;div class=&quot;arrow&quot;&gt;&lt;/div&gt;&lt;h3 class=&quot;popover-title&quot;&gt;&lt;/h3&gt;&lt;div class=&quot;popover-content&quot;&gt;&lt;/div&gt;&lt;/div&gt;&#x27;
+  })
+
+
+ /* POPOVER NO CONFLICT
+  * =================== */
+
+  $.fn.popover.noConflict = function () {
+    $.fn.popover = old
+    return this
+  }
+
+}(window.jQuery);
+
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-scrollspy&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* =============================================================
+ * bootstrap-scrollspy.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#scrollspy
+ * =============================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ============================================================== */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* SCROLLSPY CLASS DEFINITION
+  * ========================== */
+
+  function ScrollSpy(element, options) {
+    var process = $.proxy(this.process, this)
+      , $element = $(element).is(&#x27;body&#x27;) ? $(window) : $(element)
+      , href
+    this.options = $.extend({}, $.fn.scrollspy.defaults, options)
+    this.$scrollElement = $element.on(&#x27;scroll.scroll-spy.data-api&#x27;, process)
+    this.selector = (this.options.target
+      || ((href = $(element).attr(&#x27;href&#x27;)) &amp;&amp; href.replace(/.*(?=#[^\s]+$)/, &#x27;&#x27;)) //strip for ie7
+      || &#x27;&#x27;) + &#x27; .nav li &gt; a&#x27;
+    this.$body = $(&#x27;body&#x27;)
+    this.refresh()
+    this.process()
+  }
+
+  ScrollSpy.prototype = {
+
+      constructor: ScrollSpy
+
+    , refresh: function () {
+        var self = this
+          , $targets
+
+        this.offsets = $([])
+        this.targets = $([])
+
+        $targets = this.$body
+          .find(this.selector)
+          .map(function () {
+            var $el = $(this)
+              , href = $el.data(&#x27;target&#x27;) || $el.attr(&#x27;href&#x27;)
+              , $href = /^#\w/.test(href) &amp;&amp; $(href)
+            return ( $href
+              &amp;&amp; $href.length
+              &amp;&amp; [[ $href.position().top + (!$.isWindow(self.$scrollElement.get(0)) &amp;&amp; self.$scrollElement.scrollTop()), href ]] ) || null
+          })
+          .sort(function (a, b) { return a[0] - b[0] })
+          .each(function () {
+            self.offsets.push(this[0])
+            self.targets.push(this[1])
+          })
+      }
+
+    , process: function () {
+        var scrollTop = this.$scrollElement.scrollTop() + this.options.offset
+          , scrollHeight = this.$scrollElement[0].scrollHeight || this.$body[0].scrollHeight
+          , maxScroll = scrollHeight - this.$scrollElement.height()
+          , offsets = this.offsets
+          , targets = this.targets
+          , activeTarget = this.activeTarget
+          , i
+
+        if (scrollTop &gt;= maxScroll) {
+          return activeTarget != (i = targets.last()[0])
+            &amp;&amp; this.activate ( i )
+        }
+
+        for (i = offsets.length; i--;) {
+          activeTarget != targets[i]
+            &amp;&amp; scrollTop &gt;= offsets[i]
+            &amp;&amp; (!offsets[i + 1] || scrollTop &lt;= offsets[i + 1])
+            &amp;&amp; this.activate( targets[i] )
+        }
+      }
+
+    , activate: function (target) {
+        var active
+          , selector
+
+        this.activeTarget = target
+
+        $(this.selector)
+          .parent(&#x27;.active&#x27;)
+          .removeClass(&#x27;active&#x27;)
+
+        selector = this.selector
+          + &#x27;[data-target=&quot;&#x27; + target + &#x27;&quot;],&#x27;
+          + this.selector + &#x27;[href=&quot;&#x27; + target + &#x27;&quot;]&#x27;
+
+        active = $(selector)
+          .parent(&#x27;li&#x27;)
+          .addClass(&#x27;active&#x27;)
+
+        if (active.parent(&#x27;.dropdown-menu&#x27;).length)  {
+          active = active.closest(&#x27;li.dropdown&#x27;).addClass(&#x27;active&#x27;)
+        }
+
+        active.trigger(&#x27;activate&#x27;)
+      }
+
+  }
+
+
+ /* SCROLLSPY PLUGIN DEFINITION
+  * =========================== */
+
+  var old = $.fn.scrollspy
+
+  $.fn.scrollspy = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;scrollspy&#x27;)
+        , options = typeof option == &#x27;object&#x27; &amp;&amp; option
+      if (!data) $this.data(&#x27;scrollspy&#x27;, (data = new ScrollSpy(this, options)))
+      if (typeof option == &#x27;string&#x27;) data[option]()
+    })
+  }
+
+  $.fn.scrollspy.Constructor = ScrollSpy
+
+  $.fn.scrollspy.defaults = {
+    offset: 10
+  }
+
+
+ /* SCROLLSPY NO CONFLICT
+  * ===================== */
+
+  $.fn.scrollspy.noConflict = function () {
+    $.fn.scrollspy = old
+    return this
+  }
+
+
+ /* SCROLLSPY DATA-API
+  * ================== */
+
+  $(window).on(&#x27;load&#x27;, function () {
+    $(&#x27;[data-spy=&quot;scroll&quot;]&#x27;).each(function () {
+      var $spy = $(this)
+      $spy.scrollspy($spy.data())
+    })
+  })
+
+}(window.jQuery);
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-tab&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* ========================================================
+ * bootstrap-tab.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#tabs
+ * ========================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ======================================================== */
+
+
+!function ($) {
+
+   // jshint ;_;
+
+
+ /* TAB CLASS DEFINITION
+  * ==================== */
+
+  var Tab = function (element) {
+    this.element = $(element)
+  }
+
+  Tab.prototype = {
+
+    constructor: Tab
+
+  , show: function () {
+      var $this = this.element
+        , $ul = $this.closest(&#x27;ul:not(.dropdown-menu)&#x27;)
+        , selector = $this.attr(&#x27;data-target&#x27;)
+        , previous
+        , $target
+        , e
+
+      if (!selector) {
+        selector = $this.attr(&#x27;href&#x27;)
+        selector = selector &amp;&amp; selector.replace(/.*(?=#[^\s]*$)/, &#x27;&#x27;) //strip for ie7
+      }
+
+      if ( $this.parent(&#x27;li&#x27;).hasClass(&#x27;active&#x27;) ) return
+
+      previous = $ul.find(&#x27;.active:last a&#x27;)[0]
+
+      e = $.Event(&#x27;show&#x27;, {
+        relatedTarget: previous
+      })
+
+      $this.trigger(e)
+
+      if (e.isDefaultPrevented()) return
+
+      $target = $(selector)
+
+      this.activate($this.parent(&#x27;li&#x27;), $ul)
+      this.activate($target, $target.parent(), function () {
+        $this.trigger({
+          type: &#x27;shown&#x27;
+        , relatedTarget: previous
+        })
+      })
+    }
+
+  , activate: function ( element, container, callback) {
+      var $active = container.find(&#x27;&gt; .active&#x27;)
+        , transition = callback
+            &amp;&amp; $.support.transition
+            &amp;&amp; $active.hasClass(&#x27;fade&#x27;)
+
+      function next() {
+        $active
+          .removeClass(&#x27;active&#x27;)
+          .find(&#x27;&gt; .dropdown-menu &gt; .active&#x27;)
+          .removeClass(&#x27;active&#x27;)
+
+        element.addClass(&#x27;active&#x27;)
+
+        if (transition) {
+          element[0].offsetWidth // reflow for transition
+          element.addClass(&#x27;in&#x27;)
+        } else {
+          element.removeClass(&#x27;fade&#x27;)
+        }
+
+        if ( element.parent(&#x27;.dropdown-menu&#x27;) ) {
+          element.closest(&#x27;li.dropdown&#x27;).addClass(&#x27;active&#x27;)
+        }
+
+        callback &amp;&amp; callback()
+      }
+
+      transition ?
+        $active.one($.support.transition.end, next) :
+        next()
+
+      $active.removeClass(&#x27;in&#x27;)
+    }
+  }
+
+
+ /* TAB PLUGIN DEFINITION
+  * ===================== */
+
+  var old = $.fn.tab
+
+  $.fn.tab = function ( option ) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;tab&#x27;)
+      if (!data) $this.data(&#x27;tab&#x27;, (data = new Tab(this)))
+      if (typeof option == &#x27;string&#x27;) data[option]()
+    })
+  }
+
+  $.fn.tab.Constructor = Tab
+
+
+ /* TAB NO CONFLICT
+  * =============== */
+
+  $.fn.tab.noConflict = function () {
+    $.fn.tab = old
+    return this
+  }
+
+
+ /* TAB DATA-API
+  * ============ */
+
+  $(document).on(&#x27;click.tab.data-api&#x27;, &#x27;[data-toggle=&quot;tab&quot;], [data-toggle=&quot;pill&quot;]&#x27;, function (e) {
+    e.preventDefault()
+    $(this).tab(&#x27;show&#x27;)
+  })
+
+}(window.jQuery);
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+//Wrapped in an outer function to preserve global this
+(function (root) { var amdExports; define(&#x27;bootstrap/bootstrap-typeahead&#x27;,[&#x27;bootstrap/bootstrap-transition&#x27;], function () { (function () {
+
+/* =============================================================
+ * bootstrap-typeahead.js v2.3.1
+ * http://twitter.github.com/bootstrap/javascript.html#typeahead
+ * =============================================================
+ * Copyright 2012 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ============================================================ */
+
+
+!function($){
+
+   // jshint ;_;
+
+
+ /* TYPEAHEAD PUBLIC CLASS DEFINITION
+  * ================================= */
+
+  var Typeahead = function (element, options) {
+    this.$element = $(element)
+    this.options = $.extend({}, $.fn.typeahead.defaults, options)
+    this.matcher = this.options.matcher || this.matcher
+    this.sorter = this.options.sorter || this.sorter
+    this.highlighter = this.options.highlighter || this.highlighter
+    this.updater = this.options.updater || this.updater
+    this.source = this.options.source
+    this.$menu = $(this.options.menu)
+    this.shown = false
+    this.listen()
+  }
+
+  Typeahead.prototype = {
+
+    constructor: Typeahead
+
+  , select: function () {
+      var val = this.$menu.find(&#x27;.active&#x27;).attr(&#x27;data-value&#x27;)
+      this.$element
+        .val(this.updater(val))
+        .change()
+      return this.hide()
+    }
+
+  , updater: function (item) {
+      return item
+    }
+
+  , show: function () {
+      var pos = $.extend({}, this.$element.position(), {
+        height: this.$element[0].offsetHeight
+      })
+
+      this.$menu
+        .insertAfter(this.$element)
+        .css({
+          top: pos.top + pos.height
+        , left: pos.left
+        })
+        .show()
+
+      this.shown = true
+      return this
+    }
+
+  , hide: function () {
+      this.$menu.hide()
+      this.shown = false
+      return this
+    }
+
+  , lookup: function (event) {
+      var items
+
+      this.query = this.$element.val()
+
+      if (!this.query || this.query.length &lt; this.options.minLength) {
+        return this.shown ? this.hide() : this
+      }
+
+      items = $.isFunction(this.source) ? this.source(this.query, $.proxy(this.process, this)) : this.source
+
+      return items ? this.process(items) : this
+    }
+
+  , process: function (items) {
+      var that = this
+
+      items = $.grep(items, function (item) {
+        return that.matcher(item)
+      })
+
+      items = this.sorter(items)
+
+      if (!items.length) {
+        return this.shown ? this.hide() : this
+      }
+
+      return this.render(items.slice(0, this.options.items)).show()
+    }
+
+  , matcher: function (item) {
+      return ~item.toLowerCase().indexOf(this.query.toLowerCase())
+    }
+
+  , sorter: function (items) {
+      var beginswith = []
+        , caseSensitive = []
+        , caseInsensitive = []
+        , item
+
+      while (item = items.shift()) {
+        if (!item.toLowerCase().indexOf(this.query.toLowerCase())) beginswith.push(item)
+        else if (~item.indexOf(this.query)) caseSensitive.push(item)
+        else caseInsensitive.push(item)
+      }
+
+      return beginswith.concat(caseSensitive, caseInsensitive)
+    }
+
+  , highlighter: function (item) {
+      var query = this.query.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, &#x27;\\$&amp;&#x27;)
+      return item.replace(new RegExp(&#x27;(&#x27; + query + &#x27;)&#x27;, &#x27;ig&#x27;), function ($1, match) {
+        return &#x27;&lt;strong&gt;&#x27; + match + &#x27;&lt;/strong&gt;&#x27;
+      })
+    }
+
+  , render: function (items) {
+      var that = this
+
+      items = $(items).map(function (i, item) {
+        i = $(that.options.item).attr(&#x27;data-value&#x27;, item)
+        i.find(&#x27;a&#x27;).html(that.highlighter(item))
+        return i[0]
+      })
+
+      items.first().addClass(&#x27;active&#x27;)
+      this.$menu.html(items)
+      return this
+    }
+
+  , next: function (event) {
+      var active = this.$menu.find(&#x27;.active&#x27;).removeClass(&#x27;active&#x27;)
+        , next = active.next()
+
+      if (!next.length) {
+        next = $(this.$menu.find(&#x27;li&#x27;)[0])
+      }
+
+      next.addClass(&#x27;active&#x27;)
+    }
+
+  , prev: function (event) {
+      var active = this.$menu.find(&#x27;.active&#x27;).removeClass(&#x27;active&#x27;)
+        , prev = active.prev()
+
+      if (!prev.length) {
+        prev = this.$menu.find(&#x27;li&#x27;).last()
+      }
+
+      prev.addClass(&#x27;active&#x27;)
+    }
+
+  , listen: function () {
+      this.$element
+        .on(&#x27;focus&#x27;,    $.proxy(this.focus, this))
+        .on(&#x27;blur&#x27;,     $.proxy(this.blur, this))
+        .on(&#x27;keypress&#x27;, $.proxy(this.keypress, this))
+        .on(&#x27;keyup&#x27;,    $.proxy(this.keyup, this))
+
+      if (this.eventSupported(&#x27;keydown&#x27;)) {
+        this.$element.on(&#x27;keydown&#x27;, $.proxy(this.keydown, this))
+      }
+
+      this.$menu
+        .on(&#x27;click&#x27;, $.proxy(this.click, this))
+        .on(&#x27;mouseenter&#x27;, &#x27;li&#x27;, $.proxy(this.mouseenter, this))
+        .on(&#x27;mouseleave&#x27;, &#x27;li&#x27;, $.proxy(this.mouseleave, this))
+    }
+
+  , eventSupported: function(eventName) {
+      var isSupported = eventName in this.$element
+      if (!isSupported) {
+        this.$element.setAttribute(eventName, &#x27;return;&#x27;)
+        isSupported = typeof this.$element[eventName] === &#x27;function&#x27;
+      }
+      return isSupported
+    }
+
+  , move: function (e) {
+      if (!this.shown) return
+
+      switch(e.keyCode) {
+        case 9: // tab
+        case 13: // enter
+        case 27: // escape
+          e.preventDefault()
+          break
+
+        case 38: // up arrow
+          e.preventDefault()
+          this.prev()
+          break
+
+        case 40: // down arrow
+          e.preventDefault()
+          this.next()
+          break
+      }
+
+      e.stopPropagation()
+    }
+
+  , keydown: function (e) {
+      this.suppressKeyPressRepeat = ~$.inArray(e.keyCode, [40,38,9,13,27])
+      this.move(e)
+    }
+
+  , keypress: function (e) {
+      if (this.suppressKeyPressRepeat) return
+      this.move(e)
+    }
+
+  , keyup: function (e) {
+      switch(e.keyCode) {
+        case 40: // down arrow
+        case 38: // up arrow
+        case 16: // shift
+        case 17: // ctrl
+        case 18: // alt
+          break
+
+        case 9: // tab
+        case 13: // enter
+          if (!this.shown) return
+          this.select()
+          break
+
+        case 27: // escape
+          if (!this.shown) return
+          this.hide()
+          break
+
+        default:
+          this.lookup()
+      }
+
+      e.stopPropagation()
+      e.preventDefault()
+  }
+
+  , focus: function (e) {
+      this.focused = true
+    }
+
+  , blur: function (e) {
+      this.focused = false
+      if (!this.mousedover &amp;&amp; this.shown) this.hide()
+    }
+
+  , click: function (e) {
+      e.stopPropagation()
+      e.preventDefault()
+      this.select()
+      this.$element.focus()
+    }
+
+  , mouseenter: function (e) {
+      this.mousedover = true
+      this.$menu.find(&#x27;.active&#x27;).removeClass(&#x27;active&#x27;)
+      $(e.currentTarget).addClass(&#x27;active&#x27;)
+    }
+
+  , mouseleave: function (e) {
+      this.mousedover = false
+      if (!this.focused &amp;&amp; this.shown) this.hide()
+    }
+
+  }
+
+
+  /* TYPEAHEAD PLUGIN DEFINITION
+   * =========================== */
+
+  var old = $.fn.typeahead
+
+  $.fn.typeahead = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+        , data = $this.data(&#x27;typeahead&#x27;)
+        , options = typeof option == &#x27;object&#x27; &amp;&amp; option
+      if (!data) $this.data(&#x27;typeahead&#x27;, (data = new Typeahead(this, options)))
+      if (typeof option == &#x27;string&#x27;) data[option]()
+    })
+  }
+
+  $.fn.typeahead.defaults = {
+    source: []
+  , items: 8
+  , menu: &#x27;&lt;ul class=&quot;typeahead dropdown-menu&quot;&gt;&lt;/ul&gt;&#x27;
+  , item: &#x27;&lt;li&gt;&lt;a href=&quot;#&quot;&gt;&lt;/a&gt;&lt;/li&gt;&#x27;
+  , minLength: 1
+  }
+
+  $.fn.typeahead.Constructor = Typeahead
+
+
+ /* TYPEAHEAD NO CONFLICT
+  * =================== */
+
+  $.fn.typeahead.noConflict = function () {
+    $.fn.typeahead = old
+    return this
+  }
+
+
+ /* TYPEAHEAD DATA-API
+  * ================== */
+
+  $(document).on(&#x27;focus.typeahead.data-api&#x27;, &#x27;[data-provide=&quot;typeahead&quot;]&#x27;, function (e) {
+    var $this = $(this)
+    if ($this.data(&#x27;typeahead&#x27;)) return
+    $this.typeahead($this.data())
+  })
+
+}(window.jQuery);
+
+
+
+}.call(root));
+    return amdExports;
+}); }(this));
+
+/*
+ * Fuel UX Checkbox
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/checkbox&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;],function (require) {
+
+	var $ = require(&#x27;jquery&#x27;);
+
+
+	// CHECKBOX CONSTRUCTOR AND PROTOTYPE
+
+	var Checkbox = function (element, options) {
+
+		this.$element = $(element);
+		this.options = $.extend({}, $.fn.checkbox.defaults, options);
+
+		// cache elements
+		this.$label = this.$element.parent();
+		this.$icon = this.$label.find(&#x27;i&#x27;);
+		this.$chk = this.$label.find(&#x27;input[type=checkbox]&#x27;);
+
+		// set default state
+		this.setState(this.$chk);
+
+		// handle events
+		this.$chk.on(&#x27;change&#x27;, $.proxy(this.itemchecked, this));
+	};
+
+	Checkbox.prototype = {
+
+		constructor: Checkbox,
+
+		setState: function ($chk) {
+			var checked = $chk.is(&#x27;:checked&#x27;);
+			var disabled = $chk.is(&#x27;:disabled&#x27;);
+
+			// reset classes
+			this.$icon.removeClass(&#x27;checked&#x27;).removeClass(&#x27;disabled&#x27;);
+
+			// set state of checkbox
+			if (checked === true) {
+				this.$icon.addClass(&#x27;checked&#x27;);
+			}
+			if (disabled === true) {
+				this.$icon.addClass(&#x27;disabled&#x27;);
+			}
+		},
+
+		enable: function () {
+			this.$chk.attr(&#x27;disabled&#x27;, false);
+			this.$icon.removeClass(&#x27;disabled&#x27;);
+		},
+
+		disable: function () {
+			this.$chk.attr(&#x27;disabled&#x27;, true);
+			this.$icon.addClass(&#x27;disabled&#x27;);
+		},
+
+		toggle: function () {
+			this.$chk.click();
+		},
+
+		itemchecked: function (e) {
+			var chk = $(e.target);
+			this.setState(chk);
+		}
+	};
+
+
+	// CHECKBOX PLUGIN DEFINITION
+
+	$.fn.checkbox = function (option, value) {
+		var methodReturn;
+
+		var $set = this.each(function () {
+			var $this = $(this);
+			var data = $this.data(&#x27;checkbox&#x27;);
+			var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+			if (!data) $this.data(&#x27;checkbox&#x27;, (data = new Checkbox(this, options)));
+			if (typeof option === &#x27;string&#x27;) methodReturn = data[option](value);
+		});
+
+		return (methodReturn === undefined) ? $set : methodReturn;
+	};
+
+	$.fn.checkbox.defaults = {};
+
+	$.fn.checkbox.Constructor = Checkbox;
+
+
+	// CHECKBOX DATA-API
+
+	$(function () {
+		$(window).on(&#x27;load&#x27;, function () {
+			//$(&#x27;i.checkbox&#x27;).each(function () {
+			$(&#x27;.checkbox-custom &gt; input[type=checkbox]&#x27;).each(function () {
+				var $this = $(this);
+				if ($this.data(&#x27;checkbox&#x27;)) return;
+				$this.checkbox($this.data());
+			});
+		});
+	});
+
+});
+
+/*
+ * Fuel UX Utilities
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/util&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;],function (require) {
+
+	var $ = require(&#x27;jquery&#x27;);
+
+	// custom case-insensitive match expression
+	function fuelTextExactCI(elem, text) {
+		return (elem.textContent || elem.innerText || $(elem).text() || &#x27;&#x27;).toLowerCase() === (text || &#x27;&#x27;).toLowerCase();
+	}
+
+	$.expr[&#x27;:&#x27;].fuelTextExactCI = $.expr.createPseudo ?
+		$.expr.createPseudo(function (text) {
+			return function (elem) {
+				return fuelTextExactCI(elem, text);
+			};
+		}) :
+		function (elem, i, match) {
+			return fuelTextExactCI(elem, match[3]);
+		};
+
+});
+/*
+ * Fuel UX Combobox
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/combobox&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;,&#x27;./util&#x27;],function (require) {
+
+	var $ = require(&#x27;jquery&#x27;);
+	require(&#x27;./util&#x27;);
+
+	// COMBOBOX CONSTRUCTOR AND PROTOTYPE
+
+	var Combobox = function (element, options) {
+		this.$element = $(element);
+		this.options = $.extend({}, $.fn.combobox.defaults, options);
+		this.$element.on(&#x27;click&#x27;, &#x27;a&#x27;, $.proxy(this.itemclicked, this));
+		this.$element.on(&#x27;change&#x27;, &#x27;input&#x27;, $.proxy(this.inputchanged, this));
+		this.$input = this.$element.find(&#x27;input&#x27;);
+		this.$button = this.$element.find(&#x27;.btn&#x27;);
+
+		// set default selection
+		this.setDefaultSelection();
+	};
+
+	Combobox.prototype = {
+
+		constructor: Combobox,
+
+		selectedItem: function () {
+			var item = this.$selectedItem;
+			var data = {};
+
+			if (item) {
+				var txt = this.$selectedItem.text();
+				data = $.extend({ text: txt }, this.$selectedItem.data());
+			}
+			else {
+				data = { text: this.$input.val()};
+			}
+
+			return data;
+		},
+
+		selectByText: function (text) {
+			var selector = &#x27;li:fuelTextExactCI(&#x27; + text + &#x27;)&#x27;;
+			this.selectBySelector(selector);
+		},
+
+		selectByValue: function (value) {
+			var selector = &#x27;li[data-value=&quot;&#x27; + value + &#x27;&quot;]&#x27;;
+			this.selectBySelector(selector);
+		},
+
+		selectByIndex: function (index) {
+			// zero-based index
+			var selector = &#x27;li:eq(&#x27; + index + &#x27;)&#x27;;
+			this.selectBySelector(selector);
+		},
+
+		selectBySelector: function (selector) {
+			var $item = this.$element.find(selector);
+
+			if (typeof $item[0] !== &#x27;undefined&#x27;) {
+				this.$selectedItem = $item;
+				this.$input.val(this.$selectedItem.text());
+			}
+			else {
+				this.$selectedItem = null;
+			}
+		},
+
+		setDefaultSelection: function () {
+			var selector = &#x27;li[data-selected=true]:first&#x27;;
+			var item = this.$element.find(selector);
+
+			if (item.length &gt; 0) {
+				// select by data-attribute
+				this.selectBySelector(selector);
+				item.removeData(&#x27;selected&#x27;);
+				item.removeAttr(&#x27;data-selected&#x27;);
+			}
+		},
+
+		enable: function () {
+			this.$input.removeAttr(&#x27;disabled&#x27;);
+			this.$button.removeClass(&#x27;disabled&#x27;);
+		},
+
+		disable: function () {
+			this.$input.attr(&#x27;disabled&#x27;, true);
+			this.$button.addClass(&#x27;disabled&#x27;);
+		},
+
+		itemclicked: function (e) {
+			this.$selectedItem = $(e.target).parent();
+
+			// set input text and trigger input change event marked as synthetic
+			this.$input.val(this.$selectedItem.text()).trigger(&#x27;change&#x27;, { synthetic: true });
+
+			// pass object including text and any data-attributes
+			// to onchange event
+			var data = this.selectedItem();
+
+			// trigger changed event
+			this.$element.trigger(&#x27;changed&#x27;, data);
+
+			e.preventDefault();
+		},
+
+		inputchanged: function (e, extra) {
+
+			// skip processing for internally-generated synthetic event
+			// to avoid double processing
+			if (extra &amp;&amp; extra.synthetic) return;
+
+			var val = $(e.target).val();
+			this.selectByText(val);
+
+			// find match based on input
+			// if no match, pass the input value
+			var data = this.selectedItem();
+			if (data.text.length === 0) {
+				data = { text: val };
+			}
+
+			// trigger changed event
+			this.$element.trigger(&#x27;changed&#x27;, data);
+
+		}
+
+	};
+
+
+	// COMBOBOX PLUGIN DEFINITION
+
+	$.fn.combobox = function (option, value) {
+		var methodReturn;
+
+		var $set = this.each(function () {
+			var $this = $(this);
+			var data = $this.data(&#x27;combobox&#x27;);
+			var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+			if (!data) $this.data(&#x27;combobox&#x27;, (data = new Combobox(this, options)));
+			if (typeof option === &#x27;string&#x27;) methodReturn = data[option](value);
+		});
+
+		return (methodReturn === undefined) ? $set : methodReturn;
+	};
+
+	$.fn.combobox.defaults = {};
+
+	$.fn.combobox.Constructor = Combobox;
+
+
+	// COMBOBOX DATA-API
+
+	$(function () {
+
+		$(window).on(&#x27;load&#x27;, function () {
+			$(&#x27;.combobox&#x27;).each(function () {
+				var $this = $(this);
+				if ($this.data(&#x27;combobox&#x27;)) return;
+				$this.combobox($this.data());
+			});
+		});
+
+		$(&#x27;body&#x27;).on(&#x27;mousedown.combobox.data-api&#x27;, &#x27;.combobox&#x27;, function (e) {
+			var $this = $(this);
+			if ($this.data(&#x27;combobox&#x27;)) return;
+			$this.combobox($this.data());
+		});
+	});
+
+});
+
+/*
+ * Fuel UX Datagrid
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/datagrid&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;],function(require) {
+
+	var $ = require(&#x27;jquery&#x27;);
+
+
+	// DATAGRID CONSTRUCTOR AND PROTOTYPE
+
+	var Datagrid = function (element, options) {
+		this.$element = $(element);
+		this.$thead = this.$element.find(&#x27;thead&#x27;);
+		this.$tfoot = this.$element.find(&#x27;tfoot&#x27;);
+		this.$footer = this.$element.find(&#x27;tfoot th&#x27;);
+		this.$footerchildren = this.$footer.children().show().css(&#x27;visibility&#x27;, &#x27;hidden&#x27;);
+		this.$topheader = this.$element.find(&#x27;thead th&#x27;);
+		this.$searchcontrol = this.$element.find(&#x27;.datagrid-search&#x27;);
+		this.$filtercontrol = this.$element.find(&#x27;.filter&#x27;);
+		this.$pagesize = this.$element.find(&#x27;.grid-pagesize&#x27;);
+		this.$pageinput = this.$element.find(&#x27;.grid-pager input&#x27;);
+		this.$pagedropdown = this.$element.find(&#x27;.grid-pager .dropdown-menu&#x27;);
+		this.$prevpagebtn = this.$element.find(&#x27;.grid-prevpage&#x27;);
+		this.$nextpagebtn = this.$element.find(&#x27;.grid-nextpage&#x27;);
+		this.$pageslabel = this.$element.find(&#x27;.grid-pages&#x27;);
+		this.$countlabel = this.$element.find(&#x27;.grid-count&#x27;);
+		this.$startlabel = this.$element.find(&#x27;.grid-start&#x27;);
+		this.$endlabel = this.$element.find(&#x27;.grid-end&#x27;);
+
+		this.$tbody = $(&#x27;&lt;tbody&gt;&#x27;).insertAfter(this.$thead);
+		this.$colheader = $(&#x27;&lt;tr&gt;&#x27;).appendTo(this.$thead);
+
+		this.options = $.extend(true, {}, $.fn.datagrid.defaults, options);
+
+		// Shim until v3 -- account for FuelUX select or native select for page size:
+		if (this.$pagesize.hasClass(&#x27;select&#x27;)) {
+			this.options.dataOptions.pageSize = parseInt(this.$pagesize.select(&#x27;selectedItem&#x27;).value, 10);
+		} else {
+			this.options.dataOptions.pageSize = parseInt(this.$pagesize.val(), 10);
+		}
+
+		// Shim until v3 -- account for older search class:
+		if (this.$searchcontrol.length &lt;= 0) {
+			this.$searchcontrol = this.$element.find(&#x27;.search&#x27;);
+		}
+
+		this.columns = this.options.dataSource.columns();
+
+		this.$nextpagebtn.on(&#x27;click&#x27;, $.proxy(this.next, this));
+		this.$prevpagebtn.on(&#x27;click&#x27;, $.proxy(this.previous, this));
+		this.$searchcontrol.on(&#x27;searched cleared&#x27;, $.proxy(this.searchChanged, this));
+		this.$filtercontrol.on(&#x27;changed&#x27;, $.proxy(this.filterChanged, this));
+		this.$colheader.on(&#x27;click&#x27;, &#x27;th&#x27;, $.proxy(this.headerClicked, this));
+
+		if(this.$pagesize.hasClass(&#x27;select&#x27;)) {
+			this.$pagesize.on(&#x27;changed&#x27;, $.proxy(this.pagesizeChanged, this));
+		} else {
+			this.$pagesize.on(&#x27;change&#x27;, $.proxy(this.pagesizeChanged, this));
+		}
+
+		this.$pageinput.on(&#x27;change&#x27;, $.proxy(this.pageChanged, this));
+
+		this.renderColumns();
+
+		if (this.options.stretchHeight) this.initStretchHeight();
+
+		this.renderData();
+	};
+
+	Datagrid.prototype = {
+
+		constructor: Datagrid,
+
+		renderColumns: function () {
+			var self = this;
+
+			this.$footer.attr(&#x27;colspan&#x27;, this.columns.length);
+			this.$topheader.attr(&#x27;colspan&#x27;, this.columns.length);
+
+			var colHTML = &#x27;&#x27;;
+
+			$.each(this.columns, function (index, column) {
+				colHTML += &#x27;&lt;th data-property=&quot;&#x27; + column.property + &#x27;&quot;&#x27;;
+				if (column.sortable) colHTML += &#x27; class=&quot;sortable&quot;&#x27;;
+				colHTML += &#x27;&gt;&#x27; + column.label + &#x27;&lt;/th&gt;&#x27;;
+			});
+
+			self.$colheader.append(colHTML);
+		},
+
+		updateColumns: function ($target, direction) {
+			var className = (direction === &#x27;asc&#x27;) ? &#x27;icon-chevron-up&#x27; : &#x27;icon-chevron-down&#x27;;
+			this.$colheader.find(&#x27;i&#x27;).remove();
+			this.$colheader.find(&#x27;th&#x27;).removeClass(&#x27;sorted&#x27;);
+			$(&#x27;&lt;i&gt;&#x27;).addClass(className).appendTo($target);
+			$target.addClass(&#x27;sorted&#x27;);
+		},
+
+		updatePageDropdown: function (data) {
+			var pageHTML = &#x27;&#x27;;
+
+			for (var i = 1; i &lt;= data.pages; i++) {
+				pageHTML += &#x27;&lt;li&gt;&lt;a&gt;&#x27; + i + &#x27;&lt;/a&gt;&lt;/li&gt;&#x27;;
+			}
+
+			this.$pagedropdown.html(pageHTML);
+		},
+
+		updatePageButtons: function (data) {
+			if (data.page === 1) {
+				this.$prevpagebtn.attr(&#x27;disabled&#x27;, &#x27;disabled&#x27;);
+			} else {
+				this.$prevpagebtn.removeAttr(&#x27;disabled&#x27;);
+			}
+
+			if (data.page === data.pages) {
+				this.$nextpagebtn.attr(&#x27;disabled&#x27;, &#x27;disabled&#x27;);
+			} else {
+				this.$nextpagebtn.removeAttr(&#x27;disabled&#x27;);
+			}
+		},
+
+		renderData: function () {
+			var self = this;
+
+			this.$tbody.html(this.placeholderRowHTML(this.options.loadingHTML));
+
+			this.options.dataSource.data(this.options.dataOptions, function (data) {
+				var itemdesc = (data.count === 1) ? self.options.itemText : self.options.itemsText;
+				var rowHTML = &#x27;&#x27;;
+
+				self.$footerchildren.css(&#x27;visibility&#x27;, function () {
+					return (data.count &gt; 0) ? &#x27;visible&#x27; : &#x27;hidden&#x27;;
+				});
+
+				self.$pageinput.val(data.page);
+				self.$pageslabel.text(data.pages);
+				self.$countlabel.text(data.count + &#x27; &#x27; + itemdesc);
+				self.$startlabel.text(data.start);
+				self.$endlabel.text(data.end);
+
+				self.updatePageDropdown(data);
+				self.updatePageButtons(data);
+
+				$.each(data.data, function (index, row) {
+					rowHTML += &#x27;&lt;tr&gt;&#x27;;
+					$.each(self.columns, function (index, column) {
+						rowHTML += &#x27;&lt;td&gt;&#x27; + row[column.property] + &#x27;&lt;/td&gt;&#x27;;
+					});
+					rowHTML += &#x27;&lt;/tr&gt;&#x27;;
+				});
+
+				if (!rowHTML) rowHTML = self.placeholderRowHTML(&#x27;0 &#x27; + self.options.itemsText);
+
+				self.$tbody.html(rowHTML);
+				self.stretchHeight();
+
+				self.$element.trigger(&#x27;loaded&#x27;);
+			});
+
+		},
+
+		placeholderRowHTML: function (content) {
+			return &#x27;&lt;tr&gt;&lt;td style=&quot;text-align:center;padding:20px;border-bottom:none;&quot; colspan=&quot;&#x27; +
+				this.columns.length + &#x27;&quot;&gt;&#x27; + content + &#x27;&lt;/td&gt;&lt;/tr&gt;&#x27;;
+		},
+
+		headerClicked: function (e) {
+			var $target = $(e.target);
+			if (!$target.hasClass(&#x27;sortable&#x27;)) return;
+
+			var direction = this.options.dataOptions.sortDirection;
+			var sort = this.options.dataOptions.sortProperty;
+			var property = $target.data(&#x27;property&#x27;);
+
+			if (sort === property) {
+				this.options.dataOptions.sortDirection = (direction === &#x27;asc&#x27;) ? &#x27;desc&#x27; : &#x27;asc&#x27;;
+			} else {
+				this.options.dataOptions.sortDirection = &#x27;asc&#x27;;
+				this.options.dataOptions.sortProperty = property;
+			}
+
+			this.options.dataOptions.pageIndex = 0;
+			this.updateColumns($target, this.options.dataOptions.sortDirection);
+			this.renderData();
+		},
+
+		pagesizeChanged: function (e, pageSize) {
+			if(pageSize) {
+				this.options.dataOptions.pageSize = parseInt(pageSize.value, 10);
+			} else {
+				this.options.dataOptions.pageSize = parseInt($(e.target).val(), 10);
+			}
+
+			this.options.dataOptions.pageIndex = 0;
+			this.renderData();
+		},
+
+		pageChanged: function (e) {
+			var pageRequested = parseInt($(e.target).val(), 10);
+			pageRequested = (isNaN(pageRequested)) ? 1 : pageRequested;
+			var maxPages = this.$pageslabel.text();
+		
+			this.options.dataOptions.pageIndex = 
+				(pageRequested &gt; maxPages) ? maxPages - 1 : pageRequested - 1;
+
+			this.renderData();
+		},
+
+		searchChanged: function (e, search) {
+			this.options.dataOptions.search = search;
+			this.options.dataOptions.pageIndex = 0;
+			this.renderData();
+		},
+
+		filterChanged: function (e, filter) {
+			this.options.dataOptions.filter = filter;
+			this.renderData();
+		},
+
+		previous: function () {
+			this.options.dataOptions.pageIndex--;
+			this.renderData();
+		},
+
+		next: function () {
+			this.options.dataOptions.pageIndex++;
+			this.renderData();
+		},
+
+		reload: function () {
+			this.options.dataOptions.pageIndex = 0;
+			this.renderData();
+		},
+
+		initStretchHeight: function () {
+			this.$gridContainer = this.$element.parent();
+
+			this.$element.wrap(&#x27;&lt;div class=&quot;datagrid-stretch-wrapper&quot;&gt;&#x27;);
+			this.$stretchWrapper = this.$element.parent();
+
+			this.$headerTable = $(&#x27;&lt;table&gt;&#x27;).attr(&#x27;class&#x27;, this.$element.attr(&#x27;class&#x27;));
+			this.$footerTable = this.$headerTable.clone();
+
+			this.$headerTable.prependTo(this.$gridContainer).addClass(&#x27;datagrid-stretch-header&#x27;);
+			this.$thead.detach().appendTo(this.$headerTable);
+
+			this.$sizingHeader = this.$thead.clone();
+			this.$sizingHeader.find(&#x27;tr:first&#x27;).remove();
+
+			this.$footerTable.appendTo(this.$gridContainer).addClass(&#x27;datagrid-stretch-footer&#x27;);
+			this.$tfoot.detach().appendTo(this.$footerTable);
+		},
+
+		stretchHeight: function () {
+			if (!this.$gridContainer) return;
+
+			this.setColumnWidths();
+
+			var targetHeight = this.$gridContainer.height();
+			var headerHeight = this.$headerTable.outerHeight();
+			var footerHeight = this.$footerTable.outerHeight();
+			var overhead = headerHeight + footerHeight;
+
+			this.$stretchWrapper.height(targetHeight - overhead);
+		},
+
+		setColumnWidths: function () {
+			if (!this.$sizingHeader) return;
+
+			this.$element.prepend(this.$sizingHeader);
+
+			var $sizingCells = this.$sizingHeader.find(&#x27;th&#x27;);
+			var columnCount = $sizingCells.length;
+
+			function matchSizingCellWidth(i, el) {
+				if (i === columnCount - 1) return;
+				$(el).width($sizingCells.eq(i).width());
+			}
+
+			this.$colheader.find(&#x27;th&#x27;).each(matchSizingCellWidth);
+			this.$tbody.find(&#x27;tr:first &gt; td&#x27;).each(matchSizingCellWidth);
+
+			this.$sizingHeader.detach();
+		}
+	};
+
+
+	// DATAGRID PLUGIN DEFINITION
+
+	$.fn.datagrid = function (option) {
+		return this.each(function () {
+			var $this = $(this);
+			var data = $this.data(&#x27;datagrid&#x27;);
+			var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+			if (!data) $this.data(&#x27;datagrid&#x27;, (data = new Datagrid(this, options)));
+			if (typeof option === &#x27;string&#x27;) data[option]();
+		});
+	};
+
+	$.fn.datagrid.defaults = {
+		dataOptions: { pageIndex: 0, pageSize: 10 },
+		loadingHTML: &#x27;&lt;div class=&quot;progress progress-striped active&quot; style=&quot;width:50%;margin:auto;&quot;&gt;&lt;div class=&quot;bar&quot; style=&quot;width:100%;&quot;&gt;&lt;/div&gt;&lt;/div&gt;&#x27;,
+		itemsText: &#x27;items&#x27;,
+		itemText: &#x27;item&#x27;
+	};
+
+	$.fn.datagrid.Constructor = Datagrid;
+
+});
+
+/*
+ * Fuel UX Pillbox
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/pillbox&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;],function(require) {
+	
+	var $ = require(&#x27;jquery&#x27;);
+
+
+	// PILLBOX CONSTRUCTOR AND PROTOTYPE
+
+	var Pillbox = function (element, options) {
+		this.$element = $(element);
+		this.options = $.extend({}, $.fn.pillbox.defaults, options);
+		this.$element.on(&#x27;click&#x27;, &#x27;li&#x27;, $.proxy(this.itemclicked, this));
+	};
+
+	Pillbox.prototype = {
+		constructor: Pillbox,
+
+		items: function() {
+			return this.$element.find(&#x27;li&#x27;).map(function() {
+				var $this = $(this);
+				return $.extend({ text: $this.text() }, $this.data());
+			}).get();
+		},
+
+		itemclicked: function (e) {
+			$(e.currentTarget).remove();
+			e.preventDefault();
+		}
+	};
+
+
+	// PILLBOX PLUGIN DEFINITION
+
+	$.fn.pillbox = function (option) {
+		var methodReturn;
+
+		var $set = this.each(function () {
+			var $this = $(this);
+			var data = $this.data(&#x27;pillbox&#x27;);
+			var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+			if (!data) $this.data(&#x27;pillbox&#x27;, (data = new Pillbox(this, options)));
+			if (typeof option === &#x27;string&#x27;) methodReturn = data[option]();
+		});
+
+		return (methodReturn === undefined) ? $set : methodReturn;
+	};
+
+	$.fn.pillbox.defaults = {};
+
+	$.fn.pillbox.Constructor = Pillbox;
+
+
+	// PILLBOX DATA-API
+
+	$(function () {
+		$(&#x27;body&#x27;).on(&#x27;mousedown.pillbox.data-api&#x27;, &#x27;.pillbox&#x27;, function (e) {
+			var $this = $(this);
+			if ($this.data(&#x27;pillbox&#x27;)) return;
+			$this.pillbox($this.data());
+		});
+	});
+	
+});
+
+
+/*
+ * Fuel UX Radio
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/radio&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;],function (require) {
+
+	var $ = require(&#x27;jquery&#x27;);
+
+
+	// RADIO CONSTRUCTOR AND PROTOTYPE
+
+	var Radio = function (element, options) {
+		this.$element = $(element);
+		this.options = $.extend({}, $.fn.radio.defaults, options);
+
+		// cache elements
+		this.$label = this.$element.parent();
+		this.$icon = this.$label.find(&#x27;i&#x27;);
+		this.$radio = this.$label.find(&#x27;input[type=radio]&#x27;);
+		this.groupName = this.$radio.attr(&#x27;name&#x27;);
+
+		// set default state
+		this.setState(this.$radio);
+
+		// handle events
+		this.$radio.on(&#x27;change&#x27;, $.proxy(this.itemchecked, this));
+	};
+
+	Radio.prototype = {
+
+		constructor: Radio,
+
+		setState: function ($radio, resetGroupState) {
+			var checked = $radio.is(&#x27;:checked&#x27;);
+			var disabled = $radio.is(&#x27;:disabled&#x27;);
+
+			// set state of radio
+			if (checked === true) {
+				this.$icon.addClass(&#x27;checked&#x27;);
+			}
+			if (disabled === true) {
+				this.$icon.addClass(&#x27;disabled&#x27;);
+			}
+		},
+
+		resetGroup: function () {
+			// reset all radio buttons in group
+			$(&#x27;input[name=&#x27; + this.groupName + &#x27;]&#x27;).next().removeClass(&#x27;checked&#x27;);
+		},
+
+		enable: function () {
+			this.$radio.attr(&#x27;disabled&#x27;, false);
+			this.$icon.removeClass(&#x27;disabled&#x27;);
+		},
+
+		disable: function () {
+			this.$radio.attr(&#x27;disabled&#x27;, true);
+			this.$icon.addClass(&#x27;disabled&#x27;);
+		},
+
+		itemchecked: function (e) {
+			var radio = $(e.target);
+
+			this.resetGroup();
+			this.setState(radio);
+		}
+	};
+
+
+	// RADIO PLUGIN DEFINITION
+
+	$.fn.radio = function (option, value) {
+		var methodReturn;
+
+		var $set = this.each(function () {
+			var $this = $(this);
+			var data = $this.data(&#x27;radio&#x27;);
+			var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+			if (!data) $this.data(&#x27;radio&#x27;, (data = new Radio(this, options)));
+			if (typeof option === &#x27;string&#x27;) methodReturn = data[option](value);
+		});
+
+		return (methodReturn === undefined) ? $set : methodReturn;
+	};
+
+	$.fn.radio.defaults = {};
+
+	$.fn.radio.Constructor = Radio;
+
+
+	// RADIO DATA-API
+
+	$(function () {
+		$(window).on(&#x27;load&#x27;, function () {
+			//$(&#x27;i.radio&#x27;).each(function () {
+			$(&#x27;.radio-custom &gt; input[type=radio]&#x27;).each(function () {
+				var $this = $(this);
+				if ($this.data(&#x27;radio&#x27;)) return;
+				$this.radio($this.data());
+			});
+		});
+	});
+
+});
+
+/*
+ * Fuel UX Search
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/search&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;],function(require) {
+
+	var $ = require(&#x27;jquery&#x27;);
+
+
+	// SEARCH CONSTRUCTOR AND PROTOTYPE
+
+	var Search = function (element, options) {
+		this.$element = $(element);
+		this.options = $.extend({}, $.fn.search.defaults, options);
+
+		this.$button = this.$element.find(&#x27;button&#x27;)
+			.on(&#x27;click&#x27;, $.proxy(this.buttonclicked, this));
+
+		this.$input = this.$element.find(&#x27;input&#x27;)
+			.on(&#x27;keydown&#x27;, $.proxy(this.keypress, this))
+			.on(&#x27;keyup&#x27;, $.proxy(this.keypressed, this));
+
+		this.$icon = this.$element.find(&#x27;i&#x27;);
+		this.activeSearch = &#x27;&#x27;;
+	};
+
+	Search.prototype = {
+
+		constructor: Search,
+
+		search: function (searchText) {
+			this.$icon.attr(&#x27;class&#x27;, &#x27;icon-remove&#x27;);
+			this.activeSearch = searchText;
+			this.$element.trigger(&#x27;searched&#x27;, searchText);
+		},
+
+		clear: function () {
+			this.$icon.attr(&#x27;class&#x27;, &#x27;icon-search&#x27;);
+			this.activeSearch = &#x27;&#x27;;
+			this.$input.val(&#x27;&#x27;);
+			this.$element.trigger(&#x27;cleared&#x27;);
+		},
+
+		action: function () {
+			var val = this.$input.val();
+			var inputEmptyOrUnchanged = val === &#x27;&#x27; || val === this.activeSearch;
+
+			if (this.activeSearch &amp;&amp; inputEmptyOrUnchanged) {
+				this.clear();
+			} else if (val) {
+				this.search(val);
+			}
+		},
+
+		buttonclicked: function (e) {
+			e.preventDefault();
+			if ($(e.currentTarget).is(&#x27;.disabled, :disabled&#x27;)) return;
+			this.action();
+		},
+
+		keypress: function (e) {
+			if (e.which === 13) {
+				e.preventDefault();
+			}
+		},
+
+		keypressed: function (e) {
+			var val, inputPresentAndUnchanged;
+
+			if (e.which === 13) {
+				e.preventDefault();
+				this.action();
+			} else {
+				val = this.$input.val();
+				inputPresentAndUnchanged = val &amp;&amp; (val === this.activeSearch);
+				this.$icon.attr(&#x27;class&#x27;, inputPresentAndUnchanged ? &#x27;icon-remove&#x27; : &#x27;icon-search&#x27;);
+			}
+		},
+
+		disable: function () {
+			this.$input.attr(&#x27;disabled&#x27;, &#x27;disabled&#x27;);
+			this.$button.addClass(&#x27;disabled&#x27;);
+		},
+
+		enable: function () {
+			this.$input.removeAttr(&#x27;disabled&#x27;);
+			this.$button.removeClass(&#x27;disabled&#x27;);
+		}
+
+	};
+
+
+	// SEARCH PLUGIN DEFINITION
+
+	$.fn.search = function (option) {
+		return this.each(function () {
+			var $this = $(this);
+			var data = $this.data(&#x27;search&#x27;);
+			var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+			if (!data) $this.data(&#x27;search&#x27;, (data = new Search(this, options)));
+			if (typeof option === &#x27;string&#x27;) data[option]();
+		});
+	};
+
+	$.fn.search.defaults = {};
+
+	$.fn.search.Constructor = Search;
+
+
+	// SEARCH DATA-API
+
+	$(function () {
+		$(&#x27;body&#x27;).on(&#x27;mousedown.search.data-api&#x27;, &#x27;.search&#x27;, function () {
+			var $this = $(this);
+			if ($this.data(&#x27;search&#x27;)) return;
+			$this.search($this.data());
+		});
+	});
+
+});
+
+/*
+ * Fuel UX Spinner
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/spinner&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;],function(require) {
+
+	var $ = require(&#x27;jquery&#x27;);
+
+
+	// SPINNER CONSTRUCTOR AND PROTOTYPE
+
+	var Spinner = function (element, options) {
+		this.$element = $(element);
+		this.options = $.extend({}, $.fn.spinner.defaults, options);
+		this.$input = this.$element.find(&#x27;.spinner-input&#x27;);
+		this.$element.on(&#x27;keyup&#x27;, this.$input, $.proxy(this.change, this));
+
+		if (this.options.hold) {
+			this.$element.on(&#x27;mousedown&#x27;, &#x27;.spinner-up&#x27;, $.proxy(function() { this.startSpin(true); } , this));
+			this.$element.on(&#x27;mouseup&#x27;, &#x27;.spinner-up, .spinner-down&#x27;, $.proxy(this.stopSpin, this));
+			this.$element.on(&#x27;mouseout&#x27;, &#x27;.spinner-up, .spinner-down&#x27;, $.proxy(this.stopSpin, this));
+			this.$element.on(&#x27;mousedown&#x27;, &#x27;.spinner-down&#x27;, $.proxy(function() {this.startSpin(false);} , this));
+		} else {
+			this.$element.on(&#x27;click&#x27;, &#x27;.spinner-up&#x27;, $.proxy(function() { this.step(true); } , this));
+			this.$element.on(&#x27;click&#x27;, &#x27;.spinner-down&#x27;, $.proxy(function() { this.step(false); }, this));
+		}
+
+		this.switches = {
+			count: 1,
+			enabled: true
+		};
+
+		if (this.options.speed === &#x27;medium&#x27;) {
+			this.switches.speed = 300;
+		} else if (this.options.speed === &#x27;fast&#x27;) {
+			this.switches.speed = 100;
+		} else {
+			this.switches.speed = 500;
+		}
+
+		this.lastValue = null;
+
+		this.render();
+
+		if (this.options.disabled) {
+			this.disable();
+		}
+	};
+
+	Spinner.prototype = {
+		constructor: Spinner,
+
+		render: function () {
+			this.$input.val(this.options.value);
+			this.$input.attr(&#x27;maxlength&#x27;,(this.options.max + &#x27;&#x27;).split(&#x27;&#x27;).length);
+		},
+
+		change: function () {
+			var newVal = this.$input.val();
+
+			if(newVal/1){
+				this.options.value = newVal/1;
+			}else{
+				newVal = newVal.replace(/[^0-9]/g,&#x27;&#x27;);
+				this.$input.val(newVal);
+				this.options.value = newVal/1;
+			}
+
+			this.triggerChangedEvent();
+		},
+
+		stopSpin: function () {
+			clearTimeout(this.switches.timeout);
+			this.switches.count = 1;
+			this.triggerChangedEvent();
+		},
+
+		triggerChangedEvent: function () {
+			var currentValue = this.value();
+			if (currentValue === this.lastValue) return;
+
+			this.lastValue = currentValue;
+
+			// Primary changed event
+			this.$element.trigger(&#x27;changed&#x27;, currentValue);
+
+			// Undocumented, kept for backward compatibility
+			this.$element.trigger(&#x27;change&#x27;);
+		},
+
+		startSpin: function (type) {
+
+			if (!this.options.disabled) {
+				var divisor = this.switches.count;
+
+				if (divisor === 1) {
+					this.step(type);
+					divisor = 1;
+				} else if (divisor &lt; 3){
+					divisor = 1.5;
+				} else if (divisor &lt; 8){
+					divisor = 2.5;
+				} else {
+					divisor = 4;
+				}
+
+				this.switches.timeout = setTimeout($.proxy(function() {this.iterator(type);} ,this),this.switches.speed/divisor);
+				this.switches.count++;
+			}
+		},
+
+		iterator: function (type) {
+			this.step(type);
+			this.startSpin(type);
+		},
+
+		step: function (dir) {
+			var curValue = this.options.value;
+			var limValue = dir ? this.options.max : this.options.min;
+
+			if ((dir ? curValue &lt; limValue : curValue &gt; limValue)) {
+				var newVal = curValue + (dir ? 1 : -1) * this.options.step;
+
+				if (dir ? newVal &gt; limValue : newVal &lt; limValue) {
+					this.value(limValue);
+				} else {
+					this.value(newVal);
+				}
+			}
+		},
+
+		value: function (value) {
+			if (!isNaN(parseFloat(value)) &amp;&amp; isFinite(value)) {
+				value = parseFloat(value);
+				this.options.value = value;
+				this.$input.val(value);
+				return this;
+			} else {
+				return this.options.value;
+			}
+		},
+
+		disable: function () {
+			this.options.disabled = true;
+			this.$input.attr(&#x27;disabled&#x27;,&#x27;&#x27;);
+			this.$element.find(&#x27;button&#x27;).addClass(&#x27;disabled&#x27;);
+		},
+
+		enable: function () {
+			this.options.disabled = false;
+			this.$input.removeAttr(&quot;disabled&quot;);
+			this.$element.find(&#x27;button&#x27;).removeClass(&#x27;disabled&#x27;);
+		}
+	};
+
+
+	// SPINNER PLUGIN DEFINITION
+
+	$.fn.spinner = function (option,value) {
+		var methodReturn;
+
+		var $set = this.each(function () {
+			var $this = $(this);
+			var data = $this.data(&#x27;spinner&#x27;);
+			var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+			if (!data) $this.data(&#x27;spinner&#x27;, (data = new Spinner(this, options)));
+			if (typeof option === &#x27;string&#x27;) methodReturn = data[option](value);
+		});
+
+		return (methodReturn === undefined) ? $set : methodReturn;
+	};
+
+	$.fn.spinner.defaults = {
+		value: 1,
+		min: 1,
+		max: 999,
+		step: 1,
+		hold: true,
+		speed: &#x27;medium&#x27;,
+		disabled: false
+	};
+
+	$.fn.spinner.Constructor = Spinner;
+
+
+	// SPINNER DATA-API
+
+	$(function () {
+		$(&#x27;body&#x27;).on(&#x27;mousedown.spinner.data-api&#x27;, &#x27;.spinner&#x27;, function (e) {
+			var $this = $(this);
+			if ($this.data(&#x27;spinner&#x27;)) return;
+			$this.spinner($this.data());
+		});
+	});
+
+});
+
+/*
+ * Fuel UX Select
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/select&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;,&#x27;./util&#x27;],function(require) {
+
+    var $ = require(&#x27;jquery&#x27;);
+	require(&#x27;./util&#x27;);
+
+    // SELECT CONSTRUCTOR AND PROTOTYPE
+
+    var Select = function (element, options) {
+        this.$element = $(element);
+        this.options = $.extend({}, $.fn.select.defaults, options);
+        this.$element.on(&#x27;click&#x27;, &#x27;a&#x27;, $.proxy(this.itemclicked, this));
+        this.$button = this.$element.find(&#x27;.btn&#x27;);
+        this.$label = this.$element.find(&#x27;.dropdown-label&#x27;);
+        this.setDefaultSelection();
+
+        if (options.resize === &#x27;auto&#x27;) {
+            this.resize();
+        }
+    };
+
+    Select.prototype = {
+
+        constructor: Select,
+
+        itemclicked: function (e) {
+            this.$selectedItem = $(e.target).parent();
+            this.$label.text(this.$selectedItem.text());
+
+            // pass object including text and any data-attributes
+            // to onchange event
+            var data = this.selectedItem();
+
+            // trigger changed event
+            this.$element.trigger(&#x27;changed&#x27;, data);
+
+            e.preventDefault();
+        },
+
+        resize: function() {
+            var el = $(&#x27;#selectTextSize&#x27;)[0];
+
+            // create element if it doesn&#x27;t exist
+            // used to calculate the length of the longest string
+            if(!el) {
+                $(&#x27;&lt;div/&gt;&#x27;).attr({id:&#x27;selectTextSize&#x27;}).appendTo(&#x27;body&#x27;);
+            }
+
+            var width = 0;
+            var newWidth = 0;
+
+            // iterate through each item to find longest string
+            this.$element.find(&#x27;a&#x27;).each(function () {
+                var $this = $(this);
+                var txt = $this.text();
+                var $txtSize = $(&#x27;#selectTextSize&#x27;);
+                $txtSize.text(txt);
+                newWidth = $txtSize.outerWidth();
+                if(newWidth &gt; width) {
+                    width = newWidth;
+                }
+            });
+
+            this.$label.width(width);
+        },
+
+        selectedItem: function() {
+            var txt = this.$selectedItem.text();
+            return $.extend({ text: txt }, this.$selectedItem.data());
+        },
+
+        selectByText: function(text) {
+            var selector = &#x27;li a:fuelTextExactCI(&#x27; + text + &#x27;)&#x27;;
+            this.selectBySelector(selector);
+        },
+
+        selectByValue: function(value) {
+            var selector = &#x27;li[data-value=&quot;&#x27; + value + &#x27;&quot;]&#x27;;
+            this.selectBySelector(selector);
+        },
+
+        selectByIndex: function(index) {
+            // zero-based index
+            var selector = &#x27;li:eq(&#x27; + index + &#x27;)&#x27;;
+            this.selectBySelector(selector);
+        },
+
+        selectBySelector: function(selector) {
+            var item = this.$element.find(selector);
+
+            this.$selectedItem = item;
+            this.$label.text(this.$selectedItem.text());
+        },
+
+        setDefaultSelection: function() {
+            var selector = &#x27;li[data-selected=true]:first&#x27;;
+            var item = this.$element.find(selector);
+            if(item.length === 0) {
+                // select first item
+                this.selectByIndex(0);
+            }
+            else {
+                // select by data-attribute
+                this.selectBySelector(selector);
+                item.removeData(&#x27;selected&#x27;);
+                item.removeAttr(&#x27;data-selected&#x27;);
+            }
+        },
+
+        enable: function() {
+            this.$button.removeClass(&#x27;disabled&#x27;);
+        },
+
+        disable: function() {
+            this.$button.addClass(&#x27;disabled&#x27;);
+        }
+
+    };
+
+
+    // SELECT PLUGIN DEFINITION
+
+    $.fn.select = function (option,value) {
+        var methodReturn;
+
+        var $set = this.each(function () {
+            var $this = $(this);
+            var data = $this.data(&#x27;select&#x27;);
+            var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+            if (!data) $this.data(&#x27;select&#x27;, (data = new Select(this, options)));
+            if (typeof option === &#x27;string&#x27;) methodReturn = data[option](value);
+        });
+
+        return (methodReturn === undefined) ? $set : methodReturn;
+    };
+
+    $.fn.select.defaults = {};
+
+    $.fn.select.Constructor = Select;
+
+
+    // SELECT DATA-API
+
+    $(function () {
+
+        $(window).on(&#x27;load&#x27;, function () {
+            $(&#x27;.select&#x27;).each(function () {
+                var $this = $(this);
+                if ($this.data(&#x27;select&#x27;)) return;
+                $this.select($this.data());
+            });
+        });
+
+        $(&#x27;body&#x27;).on(&#x27;mousedown.select.data-api&#x27;, &#x27;.select&#x27;, function (e) {
+            var $this = $(this);
+            if ($this.data(&#x27;select&#x27;)) return;
+            $this.select($this.data());
+        });
+    });
+
+});
+
+/*
+ * Fuel UX Tree
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/tree&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;],function(require) {
+
+	var $ = require(&#x27;jquery&#x27;);
+
+
+	// TREE CONSTRUCTOR AND PROTOTYPE
+
+	var Tree = function (element, options) {
+		this.$element = $(element);
+		this.options = $.extend({}, $.fn.tree.defaults, options);
+
+		this.$element.on(&#x27;click&#x27;, &#x27;.tree-item&#x27;, $.proxy( function(ev) { this.selectItem(ev.currentTarget); } ,this));
+		this.$element.on(&#x27;click&#x27;, &#x27;.tree-folder-header&#x27;, $.proxy( function(ev) { this.selectFolder(ev.currentTarget); }, this));
+
+		this.render();
+	};
+
+	Tree.prototype = {
+		constructor: Tree,
+
+		render: function () {
+			this.populate(this.$element);
+		},
+
+		populate: function ($el) {
+			var self = this;
+			var loader = $el.parent().find(&#x27;.tree-loader:eq(0)&#x27;);
+
+			loader.show();
+			this.options.dataSource.data($el.data(), function (items) {
+				loader.hide();
+
+				$.each( items.data, function(index, value) {
+					var $entity;
+
+					if(value.type === &quot;folder&quot;) {
+						$entity = self.$element.find(&#x27;.tree-folder:eq(0)&#x27;).clone().show();
+						$entity.find(&#x27;.tree-folder-name&#x27;).html(value.name);
+						$entity.find(&#x27;.tree-loader&#x27;).html(self.options.loadingHTML);
+						$entity.find(&#x27;.tree-folder-header&#x27;).data(value);
+					} else if (value.type === &quot;item&quot;) {
+						$entity = self.$element.find(&#x27;.tree-item:eq(0)&#x27;).clone().show();
+						$entity.find(&#x27;.tree-item-name&#x27;).html(value.name);
+						$entity.data(value);
+					}
+
+					if($el.hasClass(&#x27;tree-folder-header&#x27;)) {
+						$el.parent().find(&#x27;.tree-folder-content:eq(0)&#x27;).append($entity);
+					} else {
+						$el.append($entity);
+					}
+				});
+
+				self.$element.trigger(&#x27;loaded&#x27;);
+			});
+		},
+
+		selectItem: function (el) {
+			var $el = $(el);
+			var $all = this.$element.find(&#x27;.tree-selected&#x27;);
+			var data = [];
+
+			if (this.options.multiSelect) {
+				$.each($all, function(index, value) {
+					var $val = $(value);
+					if($val[0] !== $el[0]) {
+						data.push( $(value).data() );
+					}
+				});
+			} else if ($all[0] !== $el[0]) {
+				$all.removeClass(&#x27;tree-selected&#x27;)
+					.find(&#x27;i&#x27;).removeClass(&#x27;icon-ok&#x27;).addClass(&#x27;tree-dot&#x27;);
+				data.push($el.data());
+			}
+
+			if($el.hasClass(&#x27;tree-selected&#x27;)) {
+				$el.removeClass(&#x27;tree-selected&#x27;);
+				$el.find(&#x27;i&#x27;).removeClass(&#x27;icon-ok&#x27;).addClass(&#x27;tree-dot&#x27;);
+			} else {
+				$el.addClass (&#x27;tree-selected&#x27;);
+				$el.find(&#x27;i&#x27;).removeClass(&#x27;tree-dot&#x27;).addClass(&#x27;icon-ok&#x27;);
+				if (this.options.multiSelect) {
+					data.push( $el.data() );
+				}
+			}
+
+			if(data.length) {
+				this.$element.trigger(&#x27;selected&#x27;, {info: data});
+			}
+
+		},
+
+		selectFolder: function (el) {
+			var $el = $(el);
+			var $par = $el.parent();
+
+			if($el.find(&#x27;.icon-folder-close&#x27;).length) {
+				if ($par.find(&#x27;.tree-folder-content&#x27;).children().length) {
+					$par.find(&#x27;.tree-folder-content:eq(0)&#x27;).show();
+				} else {
+					this.populate( $el );
+				}
+
+				$par.find(&#x27;.icon-folder-close:eq(0)&#x27;)
+					.removeClass(&#x27;icon-folder-close&#x27;)
+					.addClass(&#x27;icon-folder-open&#x27;);
+
+				this.$element.trigger(&#x27;opened&#x27;, $el.data());
+			} else {
+				if(this.options.cacheItems) {
+					$par.find(&#x27;.tree-folder-content:eq(0)&#x27;).hide();
+				} else {
+					$par.find(&#x27;.tree-folder-content:eq(0)&#x27;).empty();
+				}
+
+				$par.find(&#x27;.icon-folder-open:eq(0)&#x27;)
+					.removeClass(&#x27;icon-folder-open&#x27;)
+					.addClass(&#x27;icon-folder-close&#x27;);
+
+				this.$element.trigger(&#x27;closed&#x27;, $el.data());
+			}
+		},
+
+		selectedItems: function () {
+			var $sel = this.$element.find(&#x27;.tree-selected&#x27;);
+			var data = [];
+
+			$.each($sel, function (index, value) {
+				data.push($(value).data());
+			});
+			return data;
+		}
+	};
+
+
+	// TREE PLUGIN DEFINITION
+
+	$.fn.tree = function (option, value) {
+		var methodReturn;
+
+		var $set = this.each(function () {
+			var $this = $(this);
+			var data = $this.data(&#x27;tree&#x27;);
+			var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+			if (!data) $this.data(&#x27;tree&#x27;, (data = new Tree(this, options)));
+			if (typeof option === &#x27;string&#x27;) methodReturn = data[option](value);
+		});
+
+		return (methodReturn === undefined) ? $set : methodReturn;
+	};
+
+	$.fn.tree.defaults = {
+		multiSelect: false,
+		loadingHTML: &#x27;&lt;div&gt;Loading...&lt;/div&gt;&#x27;,
+		cacheItems: true
+	};
+
+	$.fn.tree.Constructor = Tree;
+
+});
+
+/*
+ * Fuel UX Wizard
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/wizard&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;],function (require) {
+
+	var $ = require(&#x27;jquery&#x27;);
+
+
+	// WIZARD CONSTRUCTOR AND PROTOTYPE
+
+	var Wizard = function (element, options) {
+		var kids;
+
+		this.$element = $(element);
+		this.options = $.extend({}, $.fn.wizard.defaults, options);
+		this.currentStep = 1;
+		this.numSteps = this.$element.find(&#x27;li&#x27;).length;
+		this.$prevBtn = this.$element.find(&#x27;button.btn-prev&#x27;);
+		this.$nextBtn = this.$element.find(&#x27;button.btn-next&#x27;);
+
+		kids = this.$nextBtn.children().detach();
+		this.nextText = $.trim(this.$nextBtn.text());
+		this.$nextBtn.append(kids);
+
+		// handle events
+		this.$prevBtn.on(&#x27;click&#x27;, $.proxy(this.previous, this));
+		this.$nextBtn.on(&#x27;click&#x27;, $.proxy(this.next, this));
+		this.$element.on(&#x27;click&#x27;, &#x27;li.complete&#x27;, $.proxy(this.stepclicked, this));
+	};
+
+	Wizard.prototype = {
+
+		constructor: Wizard,
+
+		setState: function () {
+			var canMovePrev = (this.currentStep &gt; 1);
+			var firstStep = (this.currentStep === 1);
+			var lastStep = (this.currentStep === this.numSteps);
+
+			// disable buttons based on current step
+			this.$prevBtn.attr(&#x27;disabled&#x27;, (firstStep === true || canMovePrev === false));
+
+			// change button text of last step, if specified
+			var data = this.$nextBtn.data();
+			if (data &amp;&amp; data.last) {
+				this.lastText = data.last;
+				if (typeof this.lastText !== &#x27;undefined&#x27;) {
+					// replace text
+					var text = (lastStep !== true) ? this.nextText : this.lastText;
+					var kids = this.$nextBtn.children().detach();
+					this.$nextBtn.text(text).append(kids);
+				}
+			}
+
+			// reset classes for all steps
+			var $steps = this.$element.find(&#x27;li&#x27;);
+			$steps.removeClass(&#x27;active&#x27;).removeClass(&#x27;complete&#x27;);
+			$steps.find(&#x27;span.badge&#x27;).removeClass(&#x27;badge-info&#x27;).removeClass(&#x27;badge-success&#x27;);
+
+			// set class for all previous steps
+			var prevSelector = &#x27;li:lt(&#x27; + (this.currentStep - 1) + &#x27;)&#x27;;
+			var $prevSteps = this.$element.find(prevSelector);
+			$prevSteps.addClass(&#x27;complete&#x27;);
+			$prevSteps.find(&#x27;span.badge&#x27;).addClass(&#x27;badge-success&#x27;);
+
+			// set class for current step
+			var currentSelector = &#x27;li:eq(&#x27; + (this.currentStep - 1) + &#x27;)&#x27;;
+			var $currentStep = this.$element.find(currentSelector);
+			$currentStep.addClass(&#x27;active&#x27;);
+			$currentStep.find(&#x27;span.badge&#x27;).addClass(&#x27;badge-info&#x27;);
+
+			// set display of target element
+			var target = $currentStep.data().target;
+			$(&#x27;.step-pane&#x27;).removeClass(&#x27;active&#x27;);
+			$(target).addClass(&#x27;active&#x27;);
+
+			this.$element.trigger(&#x27;changed&#x27;);
+		},
+
+		stepclicked: function (e) {
+			var li = $(e.currentTarget);
+
+			var index = $(&#x27;.steps li&#x27;).index(li);
+
+			var evt = $.Event(&#x27;stepclick&#x27;);
+			this.$element.trigger(evt, {step: index + 1});
+			if (evt.isDefaultPrevented()) return;
+
+			this.currentStep = (index + 1);
+			this.setState();
+		},
+
+		previous: function () {
+			var canMovePrev = (this.currentStep &gt; 1);
+			if (canMovePrev) {
+				var e = $.Event(&#x27;change&#x27;);
+				this.$element.trigger(e, {step: this.currentStep, direction: &#x27;previous&#x27;});
+				if (e.isDefaultPrevented()) return;
+
+				this.currentStep -= 1;
+				this.setState();
+			}
+		},
+
+		next: function () {
+			var canMoveNext = (this.currentStep + 1 &lt;= this.numSteps);
+			var lastStep = (this.currentStep === this.numSteps);
+
+			if (canMoveNext) {
+				var e = $.Event(&#x27;change&#x27;);
+				this.$element.trigger(e, {step: this.currentStep, direction: &#x27;next&#x27;});
+
+				if (e.isDefaultPrevented()) return;
+
+				this.currentStep += 1;
+				this.setState();
+			}
+			else if (lastStep) {
+				this.$element.trigger(&#x27;finished&#x27;);
+			}
+		},
+
+		selectedItem: function (val) {
+			return {
+				step: this.currentStep
+			};
+		}
+	};
+
+
+	// WIZARD PLUGIN DEFINITION
+
+	$.fn.wizard = function (option, value) {
+		var methodReturn;
+
+		var $set = this.each(function () {
+			var $this = $(this);
+			var data = $this.data(&#x27;wizard&#x27;);
+			var options = typeof option === &#x27;object&#x27; &amp;&amp; option;
+
+			if (!data) $this.data(&#x27;wizard&#x27;, (data = new Wizard(this, options)));
+			if (typeof option === &#x27;string&#x27;) methodReturn = data[option](value);
+		});
+
+		return (methodReturn === undefined) ? $set : methodReturn;
+	};
+
+	$.fn.wizard.defaults = {};
+
+	$.fn.wizard.Constructor = Wizard;
+
+
+	// WIZARD DATA-API
+
+	$(function () {
+		$(&#x27;body&#x27;).on(&#x27;mousedown.wizard.data-api&#x27;, &#x27;.wizard&#x27;, function () {
+			var $this = $(this);
+			if ($this.data(&#x27;wizard&#x27;)) return;
+			$this.wizard($this.data());
+		});
+	});
+
+});
+
+/*
+ * Fuel UX
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;fuelux/all&#x27;,[&#x27;require&#x27;,&#x27;jquery&#x27;,&#x27;bootstrap/bootstrap-affix&#x27;,&#x27;bootstrap/bootstrap-alert&#x27;,&#x27;bootstrap/bootstrap-button&#x27;,&#x27;bootstrap/bootstrap-carousel&#x27;,&#x27;bootstrap/bootstrap-collapse&#x27;,&#x27;bootstrap/bootstrap-dropdown&#x27;,&#x27;bootstrap/bootstrap-modal&#x27;,&#x27;bootstrap/bootstrap-popover&#x27;,&#x27;bootstrap/bootstrap-scrollspy&#x27;,&#x27;bootstrap/bootstrap-tab&#x27;,&#x27;bootstrap/bootstrap-tooltip&#x27;,&#x27;bootstrap/bootstrap-transition&#x27;,&#x27;bootstrap/bootstrap-typeahead&#x27;,&#x27;fuelux/checkbox&#x27;,&#x27;fuelux/combobox&#x27;,&#x27;fuelux/datagrid&#x27;,&#x27;fuelux/pillbox&#x27;,&#x27;fuelux/radio&#x27;,&#x27;fuelux/search&#x27;,&#x27;fuelux/spinner&#x27;,&#x27;fuelux/select&#x27;,&#x27;fuelux/tree&#x27;,&#x27;fuelux/wizard&#x27;],function (require) {
+	require(&#x27;jquery&#x27;);
+	require(&#x27;bootstrap/bootstrap-affix&#x27;);
+	require(&#x27;bootstrap/bootstrap-alert&#x27;);
+	require(&#x27;bootstrap/bootstrap-button&#x27;);
+	require(&#x27;bootstrap/bootstrap-carousel&#x27;);
+	require(&#x27;bootstrap/bootstrap-collapse&#x27;);
+	require(&#x27;bootstrap/bootstrap-dropdown&#x27;);
+	require(&#x27;bootstrap/bootstrap-modal&#x27;);
+	require(&#x27;bootstrap/bootstrap-popover&#x27;);
+	require(&#x27;bootstrap/bootstrap-scrollspy&#x27;);
+	require(&#x27;bootstrap/bootstrap-tab&#x27;);
+	require(&#x27;bootstrap/bootstrap-tooltip&#x27;);
+	require(&#x27;bootstrap/bootstrap-transition&#x27;);
+	require(&#x27;bootstrap/bootstrap-typeahead&#x27;);
+	require(&#x27;fuelux/checkbox&#x27;);
+	require(&#x27;fuelux/combobox&#x27;);
+	require(&#x27;fuelux/datagrid&#x27;);
+	require(&#x27;fuelux/pillbox&#x27;);
+	require(&#x27;fuelux/radio&#x27;);
+	require(&#x27;fuelux/search&#x27;);
+	require(&#x27;fuelux/spinner&#x27;);
+	require(&#x27;fuelux/select&#x27;);
+	require(&#x27;fuelux/tree&#x27;);
+	require(&#x27;fuelux/wizard&#x27;);
+});
+
+/*
+ * Fuel UX
+ * https://github.com/ExactTarget/fuelux
+ *
+ * Copyright (c) 2012 ExactTarget
+ * Licensed under the MIT license.
+ */
+
+define(&#x27;jquery&#x27;, [], function () { return jQuery; });
+
+define(&#x27;fuelux/loader&#x27;, [&#x27;fuelux/all&#x27;], function () {});
+
+require(&#x27;fuelux/loader&#x27;);}());
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

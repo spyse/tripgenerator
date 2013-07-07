@@ -1,0 +1,231 @@
+<head>
+  <title>TripGenerator</title>
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDP2qHzk6qWvEj-KJyKqbLLtXPmtj3gg2c&sensor=false&libraries=places">
+  </script>
+</head>
+
+<body>
+  <div class="container">
+  	<h1>Trip-Generator</h1>
+  	<div class="row">
+  		<div class="span4">
+  			<div id="projects">
+		  		{{> projectsView}}
+		  	</div>
+		  	<h3>Informationen</h3>
+		  	<p>
+		  		TripGenerator dient dazu Fahrtenbücher zu erzeugen.<br>
+		  		Dazu können Projekte angelegt werden (siehe Oben) und diesen Projekte Standorte zugewiesen werden. Jeder Standort hat eine Anzahl von Autos und eine Angabe von durchschnittlichen Kilometer, die jedes Auto des Standorts zurücklegt.
+		  	</p>
+		  	<h3>Simulation</h3>
+		  	<p>
+		  		Die Simulation bezieht sich auf die Standorte in einem Projekt und gegebenfalls Zufallsziele. Die Simulation erzeugt für jeden Standort die angegeben Anzahl von Autos, schlägt +/- 20% pro Auto auf die durchschnittlichen Kilometer auf und lässt die Autos fahren bis Sie Ihre Kilometer abgefahren haben. Dabei stehen die aufgeführten Standorte als Ziel zur Verfügung. Außerdem können, sofern ausgewählt, auch Zufallsziele angewählt werden.
+		  	</p>
+  		</div>
+  		<div class="span8" style="margin-bottom: 30px;">
+  			<div class="row">
+  				{{> maps}}
+  			</div>
+			{{> projectInspector}}
+  		</div>
+  	</div>
+  	{{> simulationPopup}}
+  </div>
+</body>
+
+<template name="simulationPopup">
+	<div id="simulationModal" class="modal hide fade" tabindex="-1" role="dialog" style="width: 770px;">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal">x</button>
+			<h3>Simulation</h3>
+		</div>
+		<div class="modal-body">
+			<p>Fortschritt:</p>
+			<div id="simulationOutputBox">
+				<!-- Inhalt dynmisch hinzugefügt -->
+			</div>
+		</div>
+	</div>
+</template>
+
+<template name="projectsView">
+	<h3>Projekte</h3>
+	<table class="table table-condensed" id="projectsList">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Erstellt am</th>
+			</tr>
+		</thead>
+		{{#each projects}}
+			<tr class="projectEntry {{list_status}}" id="{{_id}}">
+				<td>{{name}}</td>
+				<td>{{formatDate createdAt}}</td>
+			</tr>
+		{{else}}
+			<tr>
+				<td colspan="2">Keine Projekte bisher angelegt</td>
+			</tr>
+		{{/each}}
+	</table>
+	<div class="navbar">
+      <div class="navbar-inner">
+        <div class="navbar-form pull-left">
+			<input type="text" name="newProjectField" class="span2" id="newProjectField" value="" placeholder="Projektname">
+			<button id="newProjectBtn" class="btn btn-primary">Projekt erstellen</button>
+        </div>
+      </div>
+    </div>
+</template>
+
+<template name="maps">
+	<div id="googlemaps" class="span8" style="height: 350px"></div>
+	<div class="span8 navbar">
+	  <div class="navbar-inner">
+	    <div class="navbar-form pull-left">
+			<input type="text" name="gmSearchTextField" id="gmSearchTextField">
+			<button id="newPlaceBtn" class="btn btn-primary">Zu aktivem Projekt hinzufügen</button>
+	    </div>
+	  </div>
+	</div>
+</template>
+
+<template name="projectInspector">
+	<h3>Projekt Inspektor {{> projectMisc}}</h3>
+	{{#if project_selected}}
+	{{> placesTable}}
+	{{> randomDirections}}
+	<div class="row">
+		<div class="span8">
+			<div class="row">
+				<div class="span4">
+					<label class="checkbox">
+						<input id="saveCheck" type="checkbox"> Nach Generierung abspeichern?
+					</label>
+				</div>
+				<div class="span4">
+					<button id="startSimulation" class="btn btn-large btn-primary" style="width: 300px;">Simulieren</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	{{else}}
+		<p>Projekt in der linken Liste anklicken oder ein neues erstellen.</p>
+	{{/if}}
+</template>
+
+<template name="projectMisc">
+	{{#if modified}} <span class="label label-warning"><i class="icon-warning-sign icon-white"></i> ungesicherte Änderungen!</span> <button id="saveChanges" class="btn btn-mini" type="button"><i class="icon-hdd"></i> Speichern</button>{{/if}}
+</template>
+
+<template name="placesTable">
+<div class="row">
+	<div class="span8">
+		<h4>Standorte</h4>
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Autos</th>
+					<th>&#216; Kilometer</th>
+					<th>Optionen</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each places}}
+					<tr>
+						<td>{{name}}</td>
+						<td class="fuelux">
+							<div id="{{pid}}" class="spinner spinner-car" data-value="{{cars}}">
+								<input type="text" class="input-mini spinner-input">
+								<div class="spinner-buttons	btn-group btn-group-vertical">
+									<button class="btn spinner-up">
+										<i class="icon-chevron-up"></i>
+									</button>
+									<button class="btn spinner-down">
+										<i class="icon-chevron-down"></i>
+									</button>
+								</div>
+							</div>
+						</td>
+						<td class="fuelux">
+							<div id="{{pid}}" class="spinner spinner-km" data-value="{{kmAVG}}">
+								<input type="text" class="input-mini spinner-input" style="width: 60px;">
+								<div class="spinner-buttons	btn-group btn-group-vertical">
+									<button class="btn spinner-up">
+										<i class="icon-chevron-up"></i>
+									</button>
+									<button class="btn spinner-down">
+										<i class="icon-chevron-down"></i>
+									</button>
+								</div>
+							</div>
+						</td>
+						<td>
+							<div class="btn-toolbar" style="margin: 0;">
+								<div class="btn-group">
+									<a class="btn btn-mini removeMarker" data-markerid="{{pid}}" data-projectid="{{pid}}" title="Löschen"><i class="icon-trash removeMarker" data-markerid="{{pid}}" data-projectid="{{pid}}"></i></a>
+									<a class="btn btn-mini focusMarker" data-markerid="{{id}}" data-projectid="{{pid}}" title="Fokusieren"><i class="icon-zoom-in focusMarker" width="80" data-markerid="{{pid}}" data-projectid="{{pid}}"></i></a>
+								</div>
+							</div>
+						</td>
+					</tr>
+				{{else}}
+					<tr>
+						<td colspan="4">Bisher keine Standorte</td>
+					</tr>
+				{{/each}}
+			</tbody>
+		</table>
+	</div>
+</div>
+</template>
+
+<template name="randomDirections">
+	<div class="row">
+		<div class="span8">
+			<h4>Zufallsstrecken</h4>
+			<p>Bei Zufalls strecken werden um alle oben aufgeführte Standorte zufällige Ziele generiert die ebenfalls angefahren werden können.</p>
+			<div class="row">
+				<div class="span2">
+					<label class="checkbox">
+						<input id="rdcheck" type="checkbox"> Zufallsstrecken generieren?
+					</label>
+				</div>
+				<div class="span3">
+					<p style="float: left; margin: 4px 8px 0 0">Anzahl: </p>
+					<div class="fuelux">
+						<div id="rdcspinner" class="spinner spinner-km">
+							<input type="text" class="input-mini spinner-input" style="width: 60px;">
+							<div class="spinner-buttons	btn-group btn-group-vertical">
+								<button class="btn spinner-up">
+									<i class="icon-chevron-up"></i>
+								</button>
+								<button class="btn spinner-down">
+									<i class="icon-chevron-down"></i>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="span3">
+					<p style="float: left; margin: 4px 8px 0 0">Radius in km: </p>
+					<div class="fuelux">
+						<div id="rddspinner" class="spinner spinner-km">
+							<input type="text" class="input-mini spinner-input" style="width: 60px;">
+							<div class="spinner-buttons	btn-group btn-group-vertical">
+								<button class="btn spinner-up">
+									<i class="icon-chevron-up"></i>
+								</button>
+								<button class="btn spinner-down">
+									<i class="icon-chevron-down"></i>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<hr>
+</template>

@@ -1,0 +1,10 @@
+{
+    "name": "TripGenerator",
+    "description": "Ein kleines Tool zur Generierung von Fahrtenbücher. Genutzt wird meteor.",
+    "version": "0.3",
+    "options": {
+    	"exclude": "../.meteor",
+    	"paths": "../",
+        "outdir": "apidocs"
+    }
+}
