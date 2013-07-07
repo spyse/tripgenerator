@@ -154,6 +154,9 @@ Template.placesTable.rendered = function() {
   }
 };
 
+/**
+  Events für die Projekt-Detail-Ansicht
+**/
 Template.projectInspector.events({
   'click a.removeMarker': removePlace,
   'click a.focusMarker': focusMarker,
@@ -173,6 +176,9 @@ Template.projectInspector.events({
   }
 });
 
+/**
+  Beim rendern Spinners erzeugen.
+**/
 Template.randomDirections.rendered = function() {
   $('#rddspinner').spinner({value: 50, max: 500, step: 10});
   $('#rddspinner').spinner('disable');
@@ -180,6 +186,9 @@ Template.randomDirections.rendered = function() {
   $('#rdcspinner').spinner('disable');
 };
 
+/**
+  Events für die Zufallsfahrten in der Projekt-Detail-Ansicht
+**/
 Template.randomDirections.events({
   'click #rdcheck': function(e, t) {
     if(e.target.checked) {
@@ -410,6 +419,9 @@ function removePlace(e, t) {
   saveCurrentPlaces();
 };
 
+/**
+  Setzt auf der Map den focus des geklickten Markers
+**/
 function focusMarker(e, t) {
   e.preventDefault();
   var mid = e.target.getAttribute('data-markerid');
@@ -420,6 +432,9 @@ function focusMarker(e, t) {
   map.setZoom(12);
 };
 
+/**
+  Initiert die googleMap
+**/
 function initGoogleMaps() {
   logger.info("Initialisiere Googlemaps");
   var mapOptions = {
@@ -431,12 +446,18 @@ function initGoogleMaps() {
   map = new google.maps.Map(document.getElementById("googlemaps"), mapOptions);
 };
 
+/**
+  Löscht alle Marker von der googleMap
+**/
 function clearMarkers() {
   for (var i = 0; i < markers.length; i++ ) {
     markers[i].setMap(null);
   }
 };
 
+/**
+  Initiert die Suchbox für die googleMap
+**/
 function initGoogleMapsSearchBox() {
   var input = document.getElementById('gmSearchTextField');
   var autocomplete = new google.maps.places.Autocomplete(input);
@@ -477,6 +498,9 @@ function initGoogleMapsSearchBox() {
   });
 };
 
+/**
+  Gibt zurück ob das Projekt ausgewählt ist
+**/
 function isProjectSelected() {
   return ((Session.get('current_project') != null) && (!Session.equals('current_project', null)));
 };
