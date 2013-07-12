@@ -3,7 +3,17 @@ Simulation in WebWorker
 
 @module Simulation
 **/
-importScripts('http://underscorejs.org/underscore-min.js');
+importScripts('http://underscorejs.org/underscore-min.js', 'http://localhost:3000/client/constants.js');
+
+//Unsauber, aber auf anhieb nicht mit importScripts hinbekommen
+
+/**
+
+**/
+// var DrivingStrategy = {
+//   'GRASSHOPPER': 0,
+//   'BEE': 1
+// };
 
 /**
 	Standort-Objekt.
@@ -80,10 +90,30 @@ Place.prototype = {
 	@return ok {Boolean} Wenn die Strecke nicht gefahren werden kann (zu wenige Kilometer übrig) wird false zurückgegeben. Ansonsten true
   	**/
   	driveDirection: function(d) {
-  		if((d.distance.value*0.001) > this.availableKM()) return false;
+  		if((d.distance.value*0.001) > this.availableKM()) return false; //Wenn ich keine KM mehr habe, kann ich die Strecke nicht fahren
   		this.currentLoc = d.destination;
   		this.kmTraveled += (d.distance.value*0.001); //meter in kilometer umwandeln
   		//Runden auf 2 kommastelle, damit keine krassen komma stellen entstehen
+  		this.kmTraveled = Math.round(this.kmTraveled * 100) / 100;
+  		return true;
+  	},
+
+	/**
+	Lässt das Auto die übergebene Strecken fahren.
+
+	@method driveDirections
+	@param d {Array} Die zu fahrende Directions {Direction}
+	@return ok {Boolean} Wenn die Strecke nicht gefahren werden kann (zu wenige Kilometer übrig) wird false zurückgegeben. Ansonsten true
+  	**/
+  	driveDirections: function(d) {
+  		if(!(d instanceof Array)) throw 'driveDirections: Parameter must be an array';
+  		var totalKM = 0;
+  		for(var i=0; i<d.length; i++) {
+  			totalKM += (d[i].distance.value*0.001);
+  		}
+  		if(totalKM > this.availableKM()) return false; //Wenn ich keine KM mehr habe, kann ich die Strecke nicht fahren
+		this.kmTraveled += totalKM;
+		//Runden auf 2 kommastelle, damit keine krassen komma stellen entstehen
   		this.kmTraveled = Math.round(this.kmTraveled * 100) / 100;
   		return true;
   	},
@@ -220,6 +250,7 @@ Simulationsklasse. Handelt die Simulation ab.
 function Simulation (parameters) {
 	this.places = parameters.places;
 	this.gmDirections = parameters.gmdirections;
+	this.drivingStrategy = parameters.drivingStrategy;
 };
 
 Simulation.prototype = {
@@ -232,6 +263,8 @@ Simulation.prototype = {
 	**/
 	startSimulation: function() {
 		self.postMessage({cmd: 'msg', parameters: {text: 'Webworker gestartet...'}});
+		self.postMessage({cmd: 'msg', parameters: {text: 'Fahrstrategie: '+this.drivingStrategy}});
+		//Formatieren
 		this.cleanUpGMDirections(this.gmDirections);
 		//Durch alle Standorte iterieren
 		for(var i = 0; i < this.places.length; i++) {
@@ -269,22 +302,42 @@ Simulation.prototype = {
 	**/
 	simulateCar: function(car) {
 		//Endlosschleife für das Auto. Abbruch wird in der Schleife gehandhabt.
-		while(true) {
+		for(;;) {
 			//finde directions die als ursprung den aktuellen Standort des Autos haben
 			var startDirections = _.filter(directionsArray, function(d) { return d.origin == car.currentLoc; });
-			//suche eine random Strecke aus
+			//suche eine random Strecke aus den Möglichkeiten aus
 			var strecke = startDirections[Math.floor(Math.random()*startDirections.length)];
-			//Auto die Strecke fahren lassen. Wenn das false zurückgibt, schleife abbrechen.
-			if(car.driveDirection(strecke)) {
-				//Als Trip abspeichern
-				var trip = new Trip(car, strecke, this.getRandomTimeForMonth(6));
-				tripsArray.push(trip);
-				//Ausgabe Trip
-				self.postMessage({cmd: 'msg', parameters: {text: trip.toString()}});
-				//Ausgabe Auto
-				self.postMessage({cmd: 'msg', parameters: {text: car.toString()}});
-				continue;
-			} else break;
+
+			if(this.drivingStrategy === DrivingStrategy.GRASSHOPPER) {
+				//Auto die Strecke fahren lassen. Wenn das false zurückgibt, schleife abbrechen.
+				if(car.driveDirection(strecke)) {
+					//Als Trip abspeichern
+					var trip = new Trip(car, strecke, this.getRandomTimeForMonth(6));
+					tripsArray.push(trip);
+					//Ausgabe Trip
+					self.postMessage({cmd: 'msg', parameters: {text: trip.toString()}});
+					//Ausgabe Auto
+					self.postMessage({cmd: 'msg', parameters: {text: car.toString()}});
+					continue;
+				} else break; //Schleife abbrechen, nächstes Auto
+			} else  if(this.drivingStrategy === DrivingStrategy.BEE) {
+				//entsprechende Gegen-Strecke ermitteln.
+				var temp1 = _.filter(directionsArray, function(d) { return d.origin == strecke.destination; });
+				var temp2 = _.filter(temp1, function(d) { return d.destination == car.currentLoc; });
+				var counterDirection = temp2[0]; //temp2 ist noch ein array, sollte aber nur ein Objekt beinhaltet, also dieses raus holen um Typ Direction zu haben.
+
+				if(car.driveDirections([strecke, counterDirection])) {
+					var startTime = this.getRandomTimeForMonth(6)
+					var tripTo = new Trip(car, strecke, startTime);
+					tripsArray.push(tripTo);
+					self.postMessage({cmd: 'msg', parameters: {text: tripTo.toString()}});
+
+					var tripBack = new Trip(car, counterDirection, tripTo.endTime); //fährt sofort wieder zurück
+					tripsArray.push(tripBack);
+					self.postMessage({cmd: 'msg', parameters: {text: tripBack.toString()}});
+					continue;
+				} else break; //Schleife abbrechen, nächstes Auto
+			}
 		}
 	},
 
@@ -319,18 +372,18 @@ Simulation.prototype = {
 	},
 
 	/**
-	Liefer eine Date Objekt mit einer zufälligen Uhrzeit für einen Trip. Dabei sind die Zufallswerte gewichtet.
+	Liefer eine {Date} Objekt mit einer zufälligen Uhrzeit für einen Trip. Dabei sind die Zufallswerte gewichtet bezüglich der Stunde. Die Minute wird per Zufall ermittelt [0 - 59]
 
 	@method getRandomTimeForMonth
-	@param month {Number} monat [1-12], das Jahr ist das aktuelle
+	@param month {Number} monat [1-12], das Jahr ist das aktuelle Jahr des Systems
 	@return {Date} Datum-Objekt mit gesetzer Uhrzeit
 	**/
 	getRandomTimeForMonth: function(month) {
 		var time = new Date();
 		time.setMonth(month-1);
 		time.setMinutes(0);
-		var weightArray = new Array(5,20,24,28,30,35,24,26,28,20,22,20,16,10,4);
-		var timeOfDayArray = new Array(6,7,8,9,10,11,12,13,14,15,16,17,18,19,20);
+		var weightArray = 		new Array(5,20,24,28,30,35,24,26,28,20,22,20,16,10, 4); //einfach gewichtung, je höher, desto eher... (Könnte mehr System rein, bisher grob nach gefühl)
+		var timeOfDayArray = 	new Array(6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20); //entprechende Uhrzeit für die obige Gewichtung
 
 		var weightSum = sum(weightArray);
 		var currentLimit = this.getRandomInt(0, weightSum);
@@ -339,6 +392,7 @@ Simulation.prototype = {
 			currentSum += weightArray[i];
 			if(currentSum >= currentLimit) {
 				time.setHours(timeOfDayArray[i]);
+				time.setMinutes(this.getRandomInt(0,59));
 				return time;
 			}
 		}

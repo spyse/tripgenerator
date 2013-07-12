@@ -8,9 +8,15 @@ YUI.add("yuidoc-meta", function(Y) {
         "Trip"
     ],
     "modules": [
+        "Client",
         "Simulation"
     ],
     "allModules": [
+        {
+            "displayName": "Client",
+            "name": "Client",
+            "description": "Trip Generator Client"
+        },
         {
             "displayName": "Simulation",
             "name": "Simulation",

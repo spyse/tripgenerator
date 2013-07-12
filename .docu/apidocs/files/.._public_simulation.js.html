@@ -55,6 +55,8 @@
 
             <ul id="api-modules" class="apis modules">
             
+                <li><a href="../modules/Client.html">Client</a></li>
+            
                 <li><a href="../modules/Simulation.html">Simulation</a></li>
             
             </ul>
@@ -111,12 +113,14 @@ importScripts(&#x27;http://underscorejs.org/underscore-min.js&#x27;);
 	@param id {Number} Identifier
 	@param name {String} Name des Standorts
 	@param GMDName {String} Name in googlemaps Directions
+	@param cars {Number} Anzahl der Autos für diesen Standort
 	@param kmAVG {Number} Durschnittliche Kilometer die Autos dieses Standorts zur Verfügung haben.
 **/
-function Place(id, name, GMDName, kmAVG) {
-	this.id = id;
+function Place(pid, name, GMDName, cars, kmAVG) {
+	this.pid = pid;
 	this.name = name;
 	this.GMDName = GMDName;
+	this.cars = cars;
 	this.kmAVG = kmAVG;
 }
 
@@ -130,7 +134,7 @@ Place.prototype = {
 	@return {String} &quot;Auto Id von Standort Heimatstandort. Aktueller Standort: aktStandort. Verfügbare Kilometer: 2030km. Gefahrene Kilometer: 1980km (übrig: 50km)&quot;
 	**/
 	toString: function() {
-		return &#x27;Standort (&#x27;+this.id+&#x27;) &#x27;+this.name+&#x27; hat im Schnitt &#x27;+this.kmAVG+&#x27; Kilometer zur Verfügung. GMDirectionsname: &#x27;+this.GMDName;
+		return &#x27;Standort (&#x27;+this.pid+&#x27;) &#x27;+this.name+&#x27; mit &#x27;+this.cars+&#x27; Autos hat pro Auto im Schnitt &#x27;+this.kmAVG+&#x27; Kilometer zur Verfügung. GMDirectionsname: &#x27;+this.GMDName;
 	}
 }
 
@@ -148,7 +152,7 @@ Place.prototype = {
  	this.id = _.uniqueId(name+&#x27;_&#x27;);
  	this.home = home;				//Heimstandort
  	this.currentLoc = currentLoc;	//Derzeitige Standort
- 	this.kmAVG = kmAVG;				//Durchschnittliche zur Verfügung stehende Kilometer
+ 	this.kmAVG = parseInt(kmAVG);				//Durchschnittliche zur Verfügung stehende Kilometer
  	this.kmTraveled = 0;			//Kilometer die das auto gefahren
  }
 
@@ -176,9 +180,11 @@ Place.prototype = {
 	@return ok {Boolean} Wenn die Strecke nicht gefahren werden kann (zu wenige Kilometer übrig) wird false zurückgegeben. Ansonsten true
   	**/
   	driveDirection: function(d) {
-  		if((d.distance.value*0.001) &gt; this.availableKM()) return false;
+  		if((d.distance.value*0.001) &gt; this.availableKM()) return false; //Wenn ich keine KM mehr habe, kann ich die Strecke nicht fahren
   		this.currentLoc = d.destination;
   		this.kmTraveled += (d.distance.value*0.001); //meter in kilometer umwandeln
+  		//Runden auf 2 kommastelle, damit keine krassen komma stellen entstehen
+  		this.kmTraveled = Math.round(this.kmTraveled * 100) / 100;
   		return true;
   	},
 
@@ -329,9 +335,9 @@ Simulation.prototype = {
 		this.cleanUpGMDirections(this.gmDirections);
 		//Durch alle Standorte iterieren
 		for(var i = 0; i &lt; this.places.length; i++) {
-			var place = new Place(this.places[i].id, this.places[i].name, this.gmDirections.originAddresses[i], this.places[i].km);
-			self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: place.toString()}});
-			//this.simulatePlace(this.places[i], this.gmDirections.originAddresses[i]);
+			var place = new Place(this.places[i].pid, this.places[i].name, this.gmDirections.originAddresses[i], this.places[i].cars, this.places[i].kmAVG);
+			//self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: place.toString()}});
+			this.simulatePlace(place);
 		}
 		self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: &#x27;########### Simulationsende ###########&#x27;}});
 		self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: this.toString()}});
@@ -344,12 +350,11 @@ Simulation.prototype = {
 
 	@method simulatePlace
 	@param p {Object} Standort
-	@param oa {String} Standortadresse als googlemaps Directions Ortsangabe
 	**/
-	simulatePlace: function(p, oa) {
-		self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: &quot;Simuliere Fahrten für Standort: &quot;+p.name+&quot; (&quot;+p.cars+&quot; Autos, &quot;+p.km+&quot; &amp;#216; KM)&quot;}});
+	simulatePlace: function(p) {
+		self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: &quot;Simuliere &quot;+p.toString()}});
 		for (var i = 1; i &lt;= p.cars; i++) {
-			var newCar = new Car(p.id,p.name, oa, this.getRandomKMWithRange(p.km, 20));
+			var newCar = new Car(p.pid,p.name, p.GMDName, this.getRandomKMWithRange(p.kmAVG, 20));
 			self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: &#x27;Auto erzeugt: &#x27;+newCar.toString()}});
 			carsArray.push(newCar);
 			this.simulateCar(newCar);
@@ -374,8 +379,10 @@ Simulation.prototype = {
 				//Als Trip abspeichern
 				var trip = new Trip(car, strecke, this.getRandomTimeForMonth(6));
 				tripsArray.push(trip);
-				//Ausgabe
+				//Ausgabe Trip
 				self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: trip.toString()}});
+				//Ausgabe Auto
+				self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: car.toString()}});
 				continue;
 			} else break;
 		}
@@ -408,22 +415,22 @@ Simulation.prototype = {
 	@return {String} Es wurden....
 	**/
 	toString: function() {
-		return &#x27;Es wurden &#x27;+this.places.length+&#x27; Standorte simuliert. Dabei fuhren &#x27;+carsArray.length+&#x27; Autos &#x27;+tripsArray.length+&#x27; Touren. Insgesamt &#x27;+sumUpTrips()+&#x27; km&#x27;;
+		return &#x27;Es wurden &#x27;+this.places.length+&#x27; Standorte simuliert. Es standen &#x27;+directionsArray.length+&#x27; Routen zur Vefügung. Es fuhren &#x27;+carsArray.length+&#x27; Autos &#x27;+tripsArray.length+&#x27; Touren. Insgesamt &#x27;+sumUpTrips()+&#x27; km&#x27;;
 	},
 
 	/**
-	Liefer eine Date Objekt mit einer zufälligen Uhrzeit für einen Trip. Dabei sind die Zufallswerte gewichtet.
+	Liefer eine {Date} Objekt mit einer zufälligen Uhrzeit für einen Trip. Dabei sind die Zufallswerte gewichtet bezüglich der Stunde. Die Minute wird per Zufall ermittelt [0 - 59]
 
 	@method getRandomTimeForMonth
-	@param month {Number} monat [1-12], das Jahr ist das aktuelle
+	@param month {Number} monat [1-12], das Jahr ist das aktuelle Jahr des Systems
 	@return {Date} Datum-Objekt mit gesetzer Uhrzeit
 	**/
 	getRandomTimeForMonth: function(month) {
 		var time = new Date();
 		time.setMonth(month-1);
 		time.setMinutes(0);
-		var weightArray = new Array(5,20,24,28,30,35,24,26,28,20,22,20,16,10,4);
-		var timeOfDayArray = new Array(6,7,8,9,10,11,12,13,14,15,16,17,18,19,20);
+		var weightArray = 		new Array(5,20,24,28,30,35,24,26,28,20,22,20,16,10, 4); //einfach gewichtung, je höher, desto eher... (Könnte mehr System rein, bisher grob nach gefühl)
+		var timeOfDayArray = 	new Array(6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20); //entprechende Uhrzeit für die obige Gewichtung
 
 		var weightSum = sum(weightArray);
 		var currentLimit = this.getRandomInt(0, weightSum);
@@ -432,6 +439,7 @@ Simulation.prototype = {
 			currentSum += weightArray[i];
 			if(currentSum &gt;= currentLimit) {
 				time.setHours(timeOfDayArray[i]);
+				time.setMinutes(this.getRandomInt(0,59));
 				return time;
 			}
 		}
@@ -483,7 +491,6 @@ self.addEventListener(&#x27;message&#x27;, function(e) {
 		case &#x27;start&#x27;:
 			var simu = new Simulation(data.parameters);
 			simu.startSimulation();
-			//startSimulation(data.parameters);
 		break;
 		case &#x27;abort&#x27;:
 			self.postMessage({cmd: &#x27;msg&#x27;, parameters: {text: &#x27;Worker stopped&#x27;}});

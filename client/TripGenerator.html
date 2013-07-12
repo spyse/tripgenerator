@@ -17,9 +17,14 @@
 		  		TripGenerator dient dazu Fahrtenbücher zu erzeugen.<br>
 		  		Dazu können Projekte angelegt werden (siehe Oben) und diesen Projekte Standorte zugewiesen werden. Jeder Standort hat eine Anzahl von Autos und eine Angabe von durchschnittlichen Kilometer, die jedes Auto des Standorts zurücklegt.
 		  	</p>
-		  	<h3>Simulation</h3>
+		  	<h4>Simulation</h4>
 		  	<p>
-		  		Die Simulation bezieht sich auf die Standorte in einem Projekt und gegebenfalls Zufallsziele. Die Simulation erzeugt für jeden Standort die angegeben Anzahl von Autos, schlägt +/- 20% pro Auto auf die durchschnittlichen Kilometer auf und lässt die Autos fahren bis Sie Ihre Kilometer abgefahren haben. Dabei stehen die aufgeführten Standorte als Ziel zur Verfügung. Außerdem können, sofern ausgewählt, auch Zufallsziele angewählt werden.
+		  		Die Simulation bezieht sich auf die Standorte in einem Projekt und gegebenfalls Zufallsziele. Die Simulation erzeugt für jeden Standort die angegeben Anzahl von Autos, schlägt +/- 20% pro Auto auf die durchschnittlichen Kilometer auf und lässt die Autos fahren bis Sie Ihre Kilometer abgefahren haben. Dabei stehen die aufgeführten Standorte als Ziel zur Verfügung. Außerdem können, sofern ausgewählt, auch Zufallsziele angefahren werden.<br>
+		  		Je nach gewählter Strategie verhalten sich die Autos unterschiedlich in Ihrer Fahrweise.
+		  	</p>
+		  	<h4>Ausgabe</h4>
+		  	<p>
+		  		Während der Simulation wird ein modales Popover den derzeitigen Stand der Simulation zeigen. Diese läuft jedoch raltiv zügig von statten (bei geringere Standort/Auto anzahl). Anschließend kann, sofern der Haken gesetzt ist, das Ergebnis im JSON-Format heruntergeladen werden. Die Formatierung ist einzeilig und sollte mit einem entsprechenden Tool verschönert werden.
 		  	</p>
   		</div>
   		<div class="span8" style="margin-bottom: 30px;">
@@ -95,12 +100,13 @@
 	{{#if project_selected}}
 	{{> placesTable}}
 	{{> randomDirections}}
+	{{> simuStrategy}}
 	<div class="row">
 		<div class="span8">
 			<div class="row">
 				<div class="span4">
 					<label class="checkbox">
-						<input id="saveCheck" type="checkbox"> Nach Generierung abspeichern?
+						<input id="saveCheck" type="checkbox"> Nach Generierung abspeichern? (JSON)
 					</label>
 				</div>
 				<div class="span4">
@@ -225,6 +231,23 @@
 					</div>
 				</div>
 			</div>
+		</div>
+	</div>
+	<hr>
+</template>
+
+<template name="simuStrategy">
+	<div class="row">
+		<div class="span8">
+			<h4>Simulations Strategie</h4>
+			<label class="radio">
+				<input type="radio" name="simustrategy" id="simustrategy1" value="GRASSHOPPER" checked>
+				Grasshopper: Ziele per Zufall nacheinander anfahren.
+			</label>
+			<label class="radio">
+				<input type="radio" name="simustrategy" id="simustrategy2" value="BEE">
+				Bee: Ziele per Zufall anfahren, anschließend wieder zum Heimat-Standort zurückgekehren.
+			</label>
 		</div>
 	</div>
 	<hr>

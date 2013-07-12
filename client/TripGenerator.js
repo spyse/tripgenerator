@@ -168,11 +168,6 @@ Template.projectInspector.events({
     else {
       Session.set('saveCheck', false);
     }
-  },
-  'click #saveToFile': function(e, t) {
-    logger.info("Speichere...");
-    var blob = new Blob(["Hello, world!"], {type: "text/plain;charset=utf-8"});
-    saveAs(blob, "hello world.txt");
   }
 });
 
@@ -266,7 +261,8 @@ function startWebworker(GMDResponse) {
   var worker = new Worker('simulation.js');
   worker.addEventListener('message', onWorkerMessage, false);
   worker.addEventListener('error', onWorkerError, false);
-  worker.postMessage({'cmd': 'start', 'parameters': {gmdirections: GMDResponse, places: currentPlaces}});  
+  var strategy = $('input[name=simustrategy]:checked').val();
+  worker.postMessage({'cmd': 'start', 'parameters': {gmdirections: GMDResponse, places: currentPlaces, drivingStrategy: DrivingStrategy[strategy]}});  
 }
 
 /**
@@ -281,7 +277,7 @@ function onWorkerMessage(e) {
       log(JSON.parse(e.data.parameters.data));
       log(e.data.parameters.data);
       if(Session.get('saveCheck')) {
-        var blob = new Blob([e.data.parameters.data], {type: "text/plain;charset=utf-8"});
+        var blob = new Blob([JSON.stringify(e.data.parameters.data, null, 4)], {type: "text/plain;charset=utf-8"});
         saveAs(blob, "simulation.json");
       }
     break;

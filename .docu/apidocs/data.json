@@ -7,7 +7,9 @@
     "files": {
         "../client/TripGenerator.js": {
             "name": "../client/TripGenerator.js",
-            "modules": {},
+            "modules": {
+                "Client": 1
+            },
             "classes": {},
             "fors": {},
             "namespaces": {}
@@ -36,6 +38,17 @@
         }
     },
     "modules": {
+        "Client": {
+            "name": "Client",
+            "submodules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {},
+            "tag": "module",
+            "file": "../client/TripGenerator.js",
+            "line": 1,
+            "description": "Trip Generator Client"
+        },
         "Simulation": {
             "name": "Simulation",
             "submodules": {},
@@ -50,7 +63,7 @@
             "namespaces": {},
             "tag": "module",
             "file": "../public/simulation.js",
-            "line": 209,
+            "line": 213,
             "description": "Simulation in WebWorker"
         }
     },
@@ -86,6 +99,11 @@
                     "type": "String"
                 },
                 {
+                    "name": "cars",
+                    "description": "Anzahl der Autos für diesen Standort",
+                    "type": "Number"
+                },
+                {
                     "name": "kmAVG",
                     "description": "Durschnittliche Kilometer die Autos dieses Standorts zur Verfügung haben.",
                     "type": "Number"
@@ -103,7 +121,7 @@
             "module": "Simulation",
             "namespace": "",
             "file": "../public/simulation.js",
-            "line": 39,
+            "line": 41,
             "description": "Auto-Objekt. Gehört zu einem Standort, besitzt durchschnt. kilometer und wieviel tatsächlich gefahren wurde",
             "is_constructor": 1,
             "params": [
@@ -140,7 +158,7 @@
             "module": "Simulation",
             "namespace": "",
             "file": "../public/simulation.js",
-            "line": 106,
+            "line": 110,
             "description": "Objekt für Routen",
             "is_constructor": 1,
             "params": [
@@ -201,7 +219,7 @@
             "module": "Simulation",
             "namespace": "",
             "file": "../public/simulation.js",
-            "line": 152,
+            "line": 156,
             "description": "Speichert einen Trip ab. Also eine Fahrt die ein Auto gefahren ist.",
             "is_constructor": 1,
             "params": [
@@ -233,7 +251,7 @@
             "module": "Simulation",
             "namespace": "",
             "file": "../public/simulation.js",
-            "line": 209,
+            "line": 213,
             "description": "Simulationsklasse. Handelt die Simulation ab.",
             "is_constructor": 1,
             "params": [
@@ -248,39 +266,188 @@
     "classitems": [
         {
             "file": "../client/TripGenerator.js",
-            "line": 137,
-            "description": "Nachricht vom Worker",
-            "class": "Place"
+            "line": 7,
+            "description": "Array für alle Standorte des ausgewählten Projekts",
+            "itemtype": "property",
+            "name": "currentPlaces",
+            "type": "Array",
+            "class": "Place",
+            "module": "Client"
         },
         {
             "file": "../client/TripGenerator.js",
-            "line": 154,
-            "description": "Error vom Worker",
-            "class": "Place"
+            "line": 15,
+            "description": "GoogleMaps Objekt",
+            "class": "Place",
+            "module": "Client"
         },
         {
             "file": "../client/TripGenerator.js",
-            "line": 161,
-            "description": "Verknüpft jeden Standort miteinander und erzeugt ein googleMapsLatLng-Objekt",
-            "class": "Place"
+            "line": 28,
+            "description": "Initiert den Logger",
+            "class": "Place",
+            "module": "Client"
         },
         {
             "file": "../client/TripGenerator.js",
-            "line": 177,
+            "line": 37,
+            "description": "Hochfahren des Clients\n\n* erstellt den Logger (im Developermodus buggy, manchmal muss die Seite neu geladen werden)\n* initiert die googleMap\n* initiert die Suchbox für googleMap\n* erzeugt einen leere Marker für googleMap\n* setzt eine Variable zur Erkennung ob das Projekt verändert wurde.",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 55,
+            "description": "Ladet die Projekte in die projects Variable",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 157,
+            "description": "Events für die Projekt-Detail-Ansicht",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 179,
+            "description": "Beim rendern Spinners erzeugen.",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 189,
+            "description": "Events für die Zufallsfahrten in der Projekt-Detail-Ansicht",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 239,
             "description": "Sendet die Orte and den google-Directions Service und schickt die Antwort an ein Callback",
-            "class": "Place"
+            "class": "Place",
+            "module": "Client"
         },
         {
             "file": "../client/TripGenerator.js",
-            "line": 194,
+            "line": 256,
             "description": "Callback für die google-Directions anfrage.",
-            "class": "Place"
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 272,
+            "description": "Nachricht vom Worker",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 304,
+            "description": "Error vom Worker",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 311,
+            "description": "Verknüpft jeden Standort miteinander und erzeugt ein googleMapsLatLng-Objekt",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 343,
+            "description": "Berechnet eine zufällige Coorodinate um eine gegebene Coordinate und eine maximale distanz\n\n  Gebaut nach http://www.geomidpoint.com/random/help.html",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 368,
+            "description": "Wandelt Grad in Rad um",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 375,
+            "description": "Wandelt Rad in Grad um",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 382,
+            "description": "Wandelt Längengrad angabe in das richtige Vorzeichen um",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 395,
+            "description": "Liefert eine Zufallszahl zwischen min/max",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 402,
+            "description": "Speichert die Standorte des derzeitig aktiven Projekts",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 410,
+            "description": "Entfernt einen Platz von den derzeit geladenen Projekt und löscht dieses auch aus der Collection.",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 422,
+            "description": "Setzt auf der Map den focus des geklickten Markers",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 435,
+            "description": "Initiert die googleMap",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 449,
+            "description": "Löscht alle Marker von der googleMap",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 458,
+            "description": "Initiert die Suchbox für die googleMap",
+            "class": "Place",
+            "module": "Client"
+        },
+        {
+            "file": "../client/TripGenerator.js",
+            "line": 501,
+            "description": "Gibt zurück ob das Projekt ausgewählt ist",
+            "class": "Place",
+            "module": "Client"
         },
         {
             "file": "../client/loader.js",
             "line": 2,
             "description": "almond 0.1.4 Copyright (c) 2011, The Dojo Foundation All Rights Reserved.\nAvailable via the MIT or new BSD license.\nsee: http://github.com/jrburke/almond for details",
-            "class": "Place"
+            "class": "Place",
+            "module": "Client"
         },
         {
             "file": "../client/loader.js",
@@ -302,23 +469,26 @@
                 "description": "normalized name",
                 "type": "String"
             },
-            "class": "Place"
+            "class": "Place",
+            "module": "Client"
         },
         {
             "file": "../client/loader.js",
             "line": 167,
             "description": "Makes a name map, normalizing the name, and using a plugin\nfor normalization if necessary. Grabs a ref to plugin\ntoo, as an optimization.",
-            "class": "Place"
+            "class": "Place",
+            "module": "Client"
         },
         {
             "file": "../client/loader.js",
             "line": 313,
             "description": "Just drops the config on the floor, but returns req in case\nthe config return value is used.",
-            "class": "Place"
+            "class": "Place",
+            "module": "Client"
         },
         {
             "file": "../public/simulation.js",
-            "line": 28,
+            "line": 30,
             "description": "Gibt alle Werte des Objekts in einem Satz zurück",
             "itemtype": "method",
             "name": "toString",
@@ -331,14 +501,14 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 57,
+            "line": 59,
             "description": "Car Prototype Functions",
             "class": "Car",
             "module": "Simulation"
         },
         {
             "file": "../public/simulation.js",
-            "line": 63,
+            "line": 65,
             "description": "Gibt dir noch verfügbaren Kilometer zurück. Zieht kmTraveled von kmAVG ab.",
             "itemtype": "method",
             "name": "availableKM",
@@ -351,7 +521,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 73,
+            "line": 75,
             "description": "Lässt das Auto die übergebene Strecke fahren.",
             "itemtype": "method",
             "name": "driveDirection",
@@ -371,7 +541,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 87,
+            "line": 91,
             "description": "Gibt alle Werte des Objekts in einem Satz zurück",
             "itemtype": "method",
             "name": "toString",
@@ -384,7 +554,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 98,
+            "line": 102,
             "description": "Array für alle Cars-Objekte.",
             "itemtype": "property",
             "name": "carsArray",
@@ -394,14 +564,14 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 127,
+            "line": 131,
             "description": "Direction Prototype Functions",
             "class": "Direction",
             "module": "Simulation"
         },
         {
             "file": "../public/simulation.js",
-            "line": 133,
+            "line": 137,
             "description": "Gibt alle Werte des Objekts in einem Satz zurück",
             "itemtype": "method",
             "name": "toString",
@@ -414,7 +584,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 144,
+            "line": 148,
             "description": "Array für alle Directions-Objekte.",
             "itemtype": "property",
             "name": "directionsArray",
@@ -424,7 +594,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 186,
+            "line": 190,
             "description": "Array für alle Trip-Objekte.",
             "itemtype": "property",
             "name": "tripsArray",
@@ -434,7 +604,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 194,
+            "line": 198,
             "description": "Berechnung gefahrener Kilometer aller Trips",
             "itemtype": "method",
             "name": "sumUpTrips",
@@ -447,7 +617,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 224,
+            "line": 228,
             "description": "Startet die Simulation",
             "itemtype": "method",
             "name": "startSimulation",
@@ -456,7 +626,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 243,
+            "line": 247,
             "description": "Simuliert für einen übergebenen Standort und dessen Name (als googlemaps Directions Ortsname) Fahrten.\nDabei wird für jedes Auto des Standorts ein Objekt angelegt. Dann die Durchschnittskilometer +- 20% für jedes auto festgelegt und das Auto \"los\" geschickt.",
             "itemtype": "method",
             "name": "simulatePlace",
@@ -465,11 +635,6 @@
                     "name": "p",
                     "description": "Standort",
                     "type": "Object"
-                },
-                {
-                    "name": "oa",
-                    "description": "Standortadresse als googlemaps Directions Ortsangabe",
-                    "type": "String"
                 }
             ],
             "class": "Simulation",
@@ -477,7 +642,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 261,
+            "line": 264,
             "description": "Simmuliert Fahrten für ein übergebenes Auto",
             "itemtype": "method",
             "name": "simulateCar",
@@ -493,7 +658,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 286,
+            "line": 291,
             "description": "Baut das GoogleMapsDirections Objekt etwas um",
             "params": [
                 {
@@ -507,7 +672,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 306,
+            "line": 311,
             "description": "Gibt einen String für die Simulation aus: Was wurde simmuliert. (Wieviele Standorte, Autos, Strecken usw.)",
             "itemtype": "method",
             "name": "toString",
@@ -520,14 +685,14 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 316,
-            "description": "Liefer eine Date Objekt mit einer zufälligen Uhrzeit für einen Trip. Dabei sind die Zufallswerte gewichtet.",
+            "line": 321,
+            "description": "Liefer eine {Date} Objekt mit einer zufälligen Uhrzeit für einen Trip. Dabei sind die Zufallswerte gewichtet bezüglich der Stunde. Die Minute wird per Zufall ermittelt [0 - 59]",
             "itemtype": "method",
             "name": "getRandomTimeForMonth",
             "params": [
                 {
                     "name": "month",
-                    "description": "monat [1-12], das Jahr ist das aktuelle",
+                    "description": "monat [1-12], das Jahr ist das aktuelle Jahr des Systems",
                     "type": "Number"
                 }
             ],
@@ -540,7 +705,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 342,
+            "line": 348,
             "description": "Rechnet einen prozentualen Aufschlag (+/-) auf die Kilometer auf",
             "itemtype": "method",
             "name": "getRandomKMWithRange",
@@ -565,7 +730,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 355,
+            "line": 361,
             "description": "Liefert eine Zufallszahl zwischen min und max",
             "itemtype": "method",
             "name": "getRandomInt",
@@ -590,7 +755,7 @@
         },
         {
             "file": "../public/simulation.js",
-            "line": 376,
+            "line": 382,
             "description": "Webworker Event zur Kommunikation mit dem Parent.",
             "itemtype": "event",
             "name": "message",
@@ -611,24 +776,100 @@
             "line": " ../client/loader.js:21"
         },
         {
-            "message": "Missing item type\nNachricht vom Worker",
-            "line": " ../client/TripGenerator.js:137"
+            "message": "Missing item type\nGoogleMaps Objekt",
+            "line": " ../client/TripGenerator.js:15"
         },
         {
-            "message": "Missing item type\nError vom Worker",
-            "line": " ../client/TripGenerator.js:154"
+            "message": "Missing item type\nInitiert den Logger",
+            "line": " ../client/TripGenerator.js:28"
         },
         {
-            "message": "Missing item type\nVerknüpft jeden Standort miteinander und erzeugt ein googleMapsLatLng-Objekt",
-            "line": " ../client/TripGenerator.js:161"
+            "message": "Missing item type\nHochfahren des Clients\n\n* erstellt den Logger (im Developermodus buggy, manchmal muss die Seite neu geladen werden)\n* initiert die googleMap\n* initiert die Suchbox für googleMap\n* erzeugt einen leere Marker für googleMap\n* setzt eine Variable zur Erkennung ob das Projekt verändert wurde.",
+            "line": " ../client/TripGenerator.js:37"
+        },
+        {
+            "message": "Missing item type\nLadet die Projekte in die projects Variable",
+            "line": " ../client/TripGenerator.js:55"
+        },
+        {
+            "message": "Missing item type\nEvents für die Projekt-Detail-Ansicht",
+            "line": " ../client/TripGenerator.js:157"
+        },
+        {
+            "message": "Missing item type\nBeim rendern Spinners erzeugen.",
+            "line": " ../client/TripGenerator.js:179"
+        },
+        {
+            "message": "Missing item type\nEvents für die Zufallsfahrten in der Projekt-Detail-Ansicht",
+            "line": " ../client/TripGenerator.js:189"
         },
         {
             "message": "Missing item type\nSendet die Orte and den google-Directions Service und schickt die Antwort an ein Callback",
-            "line": " ../client/TripGenerator.js:177"
+            "line": " ../client/TripGenerator.js:239"
         },
         {
             "message": "Missing item type\nCallback für die google-Directions anfrage.",
-            "line": " ../client/TripGenerator.js:194"
+            "line": " ../client/TripGenerator.js:256"
+        },
+        {
+            "message": "Missing item type\nNachricht vom Worker",
+            "line": " ../client/TripGenerator.js:272"
+        },
+        {
+            "message": "Missing item type\nError vom Worker",
+            "line": " ../client/TripGenerator.js:304"
+        },
+        {
+            "message": "Missing item type\nVerknüpft jeden Standort miteinander und erzeugt ein googleMapsLatLng-Objekt",
+            "line": " ../client/TripGenerator.js:311"
+        },
+        {
+            "message": "Missing item type\nBerechnet eine zufällige Coorodinate um eine gegebene Coordinate und eine maximale distanz\n\n  Gebaut nach http://www.geomidpoint.com/random/help.html",
+            "line": " ../client/TripGenerator.js:343"
+        },
+        {
+            "message": "Missing item type\nWandelt Grad in Rad um",
+            "line": " ../client/TripGenerator.js:368"
+        },
+        {
+            "message": "Missing item type\nWandelt Rad in Grad um",
+            "line": " ../client/TripGenerator.js:375"
+        },
+        {
+            "message": "Missing item type\nWandelt Längengrad angabe in das richtige Vorzeichen um",
+            "line": " ../client/TripGenerator.js:382"
+        },
+        {
+            "message": "Missing item type\nLiefert eine Zufallszahl zwischen min/max",
+            "line": " ../client/TripGenerator.js:395"
+        },
+        {
+            "message": "Missing item type\nSpeichert die Standorte des derzeitig aktiven Projekts",
+            "line": " ../client/TripGenerator.js:402"
+        },
+        {
+            "message": "Missing item type\nEntfernt einen Platz von den derzeit geladenen Projekt und löscht dieses auch aus der Collection.",
+            "line": " ../client/TripGenerator.js:410"
+        },
+        {
+            "message": "Missing item type\nSetzt auf der Map den focus des geklickten Markers",
+            "line": " ../client/TripGenerator.js:422"
+        },
+        {
+            "message": "Missing item type\nInitiert die googleMap",
+            "line": " ../client/TripGenerator.js:435"
+        },
+        {
+            "message": "Missing item type\nLöscht alle Marker von der googleMap",
+            "line": " ../client/TripGenerator.js:449"
+        },
+        {
+            "message": "Missing item type\nInitiert die Suchbox für die googleMap",
+            "line": " ../client/TripGenerator.js:458"
+        },
+        {
+            "message": "Missing item type\nGibt zurück ob das Projekt ausgewählt ist",
+            "line": " ../client/TripGenerator.js:501"
         },
         {
             "message": "Missing item type\nalmond 0.1.4 Copyright (c) 2011, The Dojo Foundation All Rights Reserved.\nAvailable via the MIT or new BSD license.\nsee: http://github.com/jrburke/almond for details",
@@ -648,15 +889,15 @@
         },
         {
             "message": "Missing item type\nCar Prototype Functions",
-            "line": " ../public/simulation.js:57"
+            "line": " ../public/simulation.js:59"
         },
         {
             "message": "Missing item type\nDirection Prototype Functions",
-            "line": " ../public/simulation.js:127"
+            "line": " ../public/simulation.js:131"
         },
         {
             "message": "Missing item type\nBaut das GoogleMapsDirections Objekt etwas um",
-            "line": " ../public/simulation.js:286"
+            "line": " ../public/simulation.js:291"
         }
     ]
 }
